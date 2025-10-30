@@ -312,6 +312,24 @@ async function loadCookies() {
     }
     
     console.log(`[Dashboard] Loaded ${allCookies.length} cookies`);
+    
+    // 🆕 CLASSIFY COOKIES USING SERVERLESS API
+    if (allCookies.length > 0 && typeof CookieClassifier !== 'undefined') {
+      console.log('[Dashboard] Classifying cookies with AI model...');
+      const cookieNames = allCookies.map(c => c.name);
+      const classifications = await CookieClassifier.classifyCookiesBatch(cookieNames);
+      
+      // Merge classification data with cookie objects
+      allCookies = allCookies.map((cookie, idx) => ({
+        ...cookie,
+        classification: classifications[idx]
+      }));
+      
+      // Log statistics
+      const stats = CookieClassifier.getStatistics(classifications);
+      console.log('[Dashboard] Classification stats:', stats);
+    }
+    
     filterAndRenderCookies();
     
   } catch (error) {
@@ -385,8 +403,19 @@ function renderAdCookies(cookies) {
  * Create a cookie card element
  */
 function createCookieCard(cookie) {
+  // 🆕 Get AI classification (or use default)
+  const classification = cookie.classification || {
+    category: 'Advertising/Tracking',
+    class_id: 3,
+    bgColor: 'bg-red-500/10',
+    textColor: 'text-red-400',
+    borderColor: 'border-red-500/30',
+    icon: '🎯'
+  };
+  
   const card = document.createElement('div');
-  card.className = 'bg-red-500/10 border border-red-500/30 rounded-xl p-4 hover:bg-red-500/15 transition-colors';
+  // 🆕 Use dynamic colors based on classification
+  card.className = `${classification.bgColor} border ${classification.borderColor} rounded-xl p-4 hover:opacity-90 transition-all`;
   
   // Security badges
   const badges = [];
@@ -405,6 +434,11 @@ function createCookieCard(cookie) {
   const sameSiteColor = sameSiteColors[cookie.sameSite] || 'gray';
   badges.push(`<span class="px-2 py-1 bg-${sameSiteColor}-500/20 text-${sameSiteColor}-400 rounded text-xs">SameSite: ${cookie.sameSite}</span>`);
   
+  // 🆕 Create classification badge with confidence
+  const confidenceBadge = classification.confidence 
+    ? ` <span class="text-xs opacity-75">(${Math.round(classification.confidence * 100)}%)</span>`
+    : '';
+  
   card.innerHTML = `
     <div class="flex justify-between items-start mb-3">
       <div class="flex-1">
@@ -415,7 +449,9 @@ function createCookieCard(cookie) {
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <span class="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs">Ad Cookie</span>
+        <span class="px-3 py-1 ${classification.bgColor} ${classification.textColor} rounded-lg text-xs font-medium border ${classification.borderColor}">
+          ${classification.icon} ${escapeHtml(classification.category)}${confidenceBadge}
+        </span>
       </div>
     </div>
     

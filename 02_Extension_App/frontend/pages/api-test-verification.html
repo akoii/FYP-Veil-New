@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Verification Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .log-entry { 
+            padding: 8px; 
+            margin: 4px 0; 
+            border-radius: 4px; 
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .log-info { background: #1e40af20; border-left: 3px solid #3b82f6; }
+        .log-success { background: #15803d20; border-left: 3px solid #22c55e; }
+        .log-error { background: #b9123420; border-left: 3px solid #ef4444; }
+        .log-warning { background: #ca8a0420; border-left: 3px solid #f59e0b; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6 text-blue-400">🔍 API Verification Test</h1>
+        
+        <div class="bg-gray-800 rounded-lg p-6 mb-6 border border-gray-700">
+            <h2 class="text-xl font-semibold mb-4 text-green-400">API Endpoint Status</h2>
+            <div id="apiStatus" class="space-y-2">
+                <p class="text-gray-400">Testing API connection...</p>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 rounded-lg p-6 mb-6 border border-gray-700">
+            <h2 class="text-xl font-semibold mb-4 text-yellow-400">Test Classification</h2>
+            <div class="flex gap-2 mb-4">
+                <input 
+                    type="text" 
+                    id="testCookie" 
+                    placeholder="Enter cookie name (e.g., _ga, _fbp, sessionid)"
+                    value="_ga"
+                    class="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                />
+                <button 
+                    onclick="testSingleCookie()" 
+                    class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition"
+                >
+                    Classify
+                </button>
+            </div>
+            <div id="singleResult" class="mt-4"></div>
+        </div>
+
+        <div class="bg-gray-800 rounded-lg p-6 mb-6 border border-gray-700">
+            <h2 class="text-xl font-semibold mb-4 text-purple-400">Batch Classification Test (25 cookies)</h2>
+            <button 
+                onclick="testBatchClassification()" 
+                class="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold transition mb-4"
+            >
+                Run Batch Test
+            </button>
+            <div id="batchResult" class="mt-4"></div>
+        </div>
+
+        <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+            <h2 class="text-xl font-semibold mb-4 text-orange-400">Console Logs</h2>
+            <div id="console" class="space-y-1 max-h-96 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <script src="../scripts/cookieClassifier.js"></script>
+    <script>
+        // Intercept console logs
+        const consoleDiv = document.getElementById('console');
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        function addLog(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = typeof message === 'object' ? JSON.stringify(message, null, 2) : message;
+            consoleDiv.appendChild(entry);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog(args.join(' '), 'info');
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog(args.join(' '), 'error');
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLog(args.join(' '), 'warning');
+        };
+
+        // Test API health
+        async function checkAPIHealth() {
+            const statusDiv = document.getElementById('apiStatus');
+            statusDiv.innerHTML = '<p class="text-yellow-400">⏳ Checking API health...</p>';
+            
+            try {
+                const result = await CookieClassifier.checkHealth();
+                statusDiv.innerHTML = `
+                    <div class="space-y-2">
+                        <p class="text-green-400 text-lg font-semibold">✅ API is ONLINE</p>
+                        <p class="text-gray-300"><strong>Endpoint:</strong> ${CookieClassifier.API_URL}</p>
+                        <p class="text-gray-300"><strong>Status:</strong> ${result.status}</p>
+                        <p class="text-gray-300"><strong>Message:</strong> ${result.message}</p>
+                        <p class="text-gray-300"><strong>Model:</strong> ${result.model || 'Linear Regression'}</p>
+                    </div>
+                `;
+                console.log('API Health Check:', result);
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="space-y-2">
+                        <p class="text-red-400 text-lg font-semibold">❌ API Error</p>
+                        <p class="text-gray-300">${error.message}</p>
+                    </div>
+                `;
+                console.error('API Health Check Failed:', error);
+            }
+        }
+
+        // Test single cookie classification
+        async function testSingleCookie() {
+            const cookieName = document.getElementById('testCookie').value.trim();
+            const resultDiv = document.getElementById('singleResult');
+            
+            if (!cookieName) {
+                resultDiv.innerHTML = '<p class="text-red-400">Please enter a cookie name</p>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<p class="text-yellow-400">⏳ Classifying...</p>';
+            
+            try {
+                console.log(`Testing single classification: ${cookieName}`);
+                const result = await CookieClassifier.classifyCookie(cookieName);
+                
+                resultDiv.innerHTML = `
+                    <div class="bg-gray-700 rounded-lg p-4 border-l-4 ${result.borderColor.replace('border-', 'border-l-')}">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-2xl">${result.icon}</span>
+                            <span class="text-xl font-bold ${result.textColor}">${result.category}</span>
+                        </div>
+                        <div class="space-y-1 text-gray-300">
+                            <p><strong>Cookie:</strong> ${cookieName}</p>
+                            <p><strong>Class ID:</strong> ${result.class_id}</p>
+                            <p><strong>Confidence:</strong> ${(result.confidence * 100).toFixed(1)}%</p>
+                            <p><strong>API Response Time:</strong> ${result.responseTime || 'N/A'}</p>
+                        </div>
+                    </div>
+                `;
+                
+                addLog(`✅ Successfully classified: ${cookieName} → ${result.category}`, 'success');
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="text-red-400">❌ Error: ${error.message}</p>`;
+                addLog(`❌ Classification failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test batch classification (same as dashboard)
+        async function testBatchClassification() {
+            const resultDiv = document.getElementById('batchResult');
+            resultDiv.innerHTML = '<p class="text-yellow-400">⏳ Classifying 25 cookies...</p>';
+            
+            const testCookies = [
+                '_ga', '_gid', '_gat', 'NID', '_fbp', '_fbc', 'fr', 
+                'sessionid', 'csrftoken', 'PHPSESSID', 'auth_token',
+                'user_preferences', 'language', 'theme',
+                'utm_source', 'utm_campaign', 'utm_medium',
+                '_hjid', '__cfduid', 'IDE', 'test_cookie',
+                '_hjIncludedInSample', '__gads', '_gcl_au', 'remember_me'
+            ];
+
+            try {
+                console.log(`Testing batch classification: ${testCookies.length} cookies`);
+                const startTime = performance.now();
+                
+                const results = await CookieClassifier.classifyCookiesBatch(testCookies);
+                
+                const endTime = performance.now();
+                const duration = ((endTime - startTime) / 1000).toFixed(2);
+                
+                // Get statistics
+                const stats = CookieClassifier.getStatistics(results);
+                
+                // Build results HTML
+                let html = `
+                    <div class="space-y-4">
+                        <div class="bg-green-500/20 rounded-lg p-4 border border-green-500/30">
+                            <p class="text-green-400 font-semibold text-lg mb-2">✅ Batch Classification Complete</p>
+                            <p class="text-gray-300"><strong>Total Cookies:</strong> ${testCookies.length}</p>
+                            <p class="text-gray-300"><strong>Duration:</strong> ${duration}s</p>
+                            <p class="text-gray-300"><strong>Speed:</strong> ${(testCookies.length / duration).toFixed(1)} cookies/sec</p>
+                        </div>
+
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h3 class="font-semibold mb-3 text-blue-400">📊 Category Distribution</h3>
+                            <div class="grid grid-cols-2 gap-2">
+                                ${Object.entries(stats).map(([category, count]) => {
+                                    const catInfo = CookieClassifier.CATEGORIES[category];
+                                    return `
+                                        <div class="flex items-center gap-2 ${catInfo.bgColor} rounded px-3 py-2">
+                                            <span>${catInfo.icon}</span>
+                                            <span class="${catInfo.textColor} font-semibold">${catInfo.name}:</span>
+                                            <span class="text-white">${count}</span>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h3 class="font-semibold mb-3 text-purple-400">🍪 Individual Results</h3>
+                            <div class="space-y-2 max-h-64 overflow-y-auto">
+                                ${results.map((r, i) => `
+                                    <div class="flex items-center justify-between bg-gray-800 rounded px-3 py-2">
+                                        <div class="flex items-center gap-2">
+                                            <span>${r.icon}</span>
+                                            <code class="text-blue-300">${testCookies[i]}</code>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="${r.textColor} text-sm">${r.category}</span>
+                                            <span class="text-gray-400 text-xs">(${(r.confidence * 100).toFixed(0)}%)</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                resultDiv.innerHTML = html;
+                addLog(`✅ Batch classification completed: ${testCookies.length} cookies in ${duration}s`, 'success');
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="text-red-400">❌ Error: ${error.message}</p>`;
+                addLog(`❌ Batch classification failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Run health check on load
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 API Verification Test Started');
+            checkAPIHealth();
+        });
+    </script>
+</body>
+</html>

@@ -497,8 +497,19 @@
     </div>
   </div>
 
-  <!-- Link to external JavaScript -->
-  <script src="../scripts/cookieManager.js"></script>
-  <script src="../scripts/dashboard.js"></script>
+    <!-- Link to external JavaScript -->
+    <!-- 🆕 Cookie Classifier API Client (must load first) -->
+    <script src="../scripts/cookieClassifier.js"></script>
+    <!-- Use standalone CookieManager when Chrome APIs not available -->
+    <script>
+        if (typeof chrome === 'undefined' || !chrome.cookies) {
+            console.log('[Dashboard] Chrome APIs not detected - Loading standalone CookieManager');
+            document.write('<script src="../scripts/cookieManager-standalone.js"><\/script>');
+        } else {
+            console.log('[Dashboard] Chrome APIs detected - Loading extension CookieManager');
+            document.write('<script src="../scripts/cookieManager.js"><\/script>');
+        }
+    </script>
+    <script src="../scripts/dashboard.js"></script>
 </body>
 </html>

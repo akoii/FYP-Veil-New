@@ -1,6 +1,12 @@
 // Service Worker - Background Script for Veil Extension
 // This handles the background processes, cookie management, and tracking detection
 
+// Import cookie classifier (will be available after script loading)
+importScripts('utils/cookie-classifier.js');
+
+// Initialize Cookie Classifier
+const cookieClassifier = new CookieClassifier('http://localhost:5000');
+
 // Listen for extension installation
 chrome.runtime.onInstalled.addListener(() => {
   console.log('Veil Privacy Extension installed');
@@ -10,6 +16,9 @@ chrome.runtime.onInstalled.addListener(() => {
   
   // Set up declarative net request rules for blocking
   setupBlockingRules();
+  
+  // Classify all existing cookies on installation
+  classifyAllCookies();
 });
 
 // Initialize default extension settings
@@ -21,7 +30,13 @@ async function initializeSettings() {
     fingerprintingBlocked: 0,
     hardwareAccessBlocked: 0,
     trackingHistory: [],
-    lastUpdated: Date.now()
+    lastUpdated: Date.now(),
+    cookieClassifications: {},  // Store cookie classifications
+    classificationStats: {      // Classification statistics
+      total: 0,
+      by_category: {},
+      average_risk_score: 0
+    }
   };
   
   const stored = await chrome.storage.local.get(Object.keys(defaults));
@@ -137,6 +152,37 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true;
   }
+  
+  // NEW: Get cookie classifications
+  if (request.action === 'getClassifications') {
+    chrome.storage.local.get(['cookieClassifications', 'classificationStats'], (data) => {
+      sendResponse({
+        classifications: data.cookieClassifications || {},
+        statistics: data.classificationStats || {}
+      });
+    });
+    return true;
+  }
+  
+  // NEW: Trigger manual cookie classification
+  if (request.action === 'classifyCookies') {
+    classifyAllCookies().then(() => {
+      sendResponse({ success: true, message: 'Cookie classification started' });
+    }).catch((error) => {
+      sendResponse({ success: false, error: error.message });
+    });
+    return true;
+  }
+  
+  // NEW: Check classifier API health
+  if (request.action === 'checkApiHealth') {
+    cookieClassifier.checkHealth().then((isHealthy) => {
+      sendResponse({ healthy: isHealthy });
+    }).catch(() => {
+      sendResponse({ healthy: false });
+    });
+    return true;
+  }
 });
 
 // Activate privacy mode
@@ -175,3 +221,180 @@ async function activatePrivacyMode() {
 setInterval(() => {
   calculatePrivacyScore();
 }, 60000); // Every minute
+
+// ========================================
+// COOKIE CLASSIFICATION FUNCTIONS
+// ========================================
+
+/**
+ * Classify all cookies in the browser
+ * Called on extension installation/startup
+ */
+async function classifyAllCookies() {
+  console.log('[CookieClassifier] Starting cookie classification...');
+  
+  try {
+    // Check if API is available
+    const isApiHealthy = await cookieClassifier.checkHealth();
+    
+    if (!isApiHealthy) {
+      console.warn('[CookieClassifier] API is not available, using fallback classification');
+    }
+    
+    // Get all cookies
+    const cookies = await chrome.cookies.getAll({});
+    console.log(`[CookieClassifier] Found ${cookies.length} cookies to classify`);
+    
+    if (cookies.length === 0) {
+      console.log('[CookieClassifier] No cookies to classify');
+      return;
+    }
+    
+    // Classify in batch for efficiency
+    const result = await cookieClassifier.classifyCookiesBatch(cookies);
+    
+    // Store classifications
+    const classifications = {};
+    result.results.forEach((classification, index) => {
+      const cookie = cookies[index];
+      const key = `${cookie.name}:${cookie.domain}`;
+      classifications[key] = {
+        ...classification,
+        timestamp: Date.now()
+      };
+    });
+    
+    // Save to storage
+    await chrome.storage.local.set({
+      cookieClassifications: classifications,
+      classificationStats: result.statistics,
+      lastClassificationUpdate: Date.now()
+    });
+    
+    console.log('[CookieClassifier] Classification complete:', result.statistics);
+    
+    // Update privacy score based on classifications
+    updatePrivacyScoreFromClassifications(result.statistics);
+    
+  } catch (error) {
+    console.error('[CookieClassifier] Error during cookie classification:', error);
+  }
+}
+
+/**
+ * Classify a single new cookie
+ * Called when a new cookie is detected
+ */
+async function classifyNewCookie(cookie) {
+  try {
+    const classification = await cookieClassifier.classifyCookie(cookie);
+    
+    // Store classification
+    const key = `${cookie.name}:${cookie.domain}`;
+    const stored = await chrome.storage.local.get('cookieClassifications');
+    const classifications = stored.cookieClassifications || {};
+    
+    classifications[key] = {
+      ...classification,
+      timestamp: Date.now()
+    };
+    
+    await chrome.storage.local.set({ cookieClassifications: classifications });
+    
+    // Update statistics
+    await updateClassificationStatistics();
+    
+    console.log(`[CookieClassifier] Classified new cookie: ${cookie.name} -> ${classification.category}`);
+    
+    return classification;
+    
+  } catch (error) {
+    console.error('[CookieClassifier] Error classifying new cookie:', error);
+    return null;
+  }
+}
+
+/**
+ * Update classification statistics
+ */
+async function updateClassificationStatistics() {
+  try {
+    const stored = await chrome.storage.local.get('cookieClassifications');
+    const classifications = Object.values(stored.cookieClassifications || {});
+    
+    const stats = {
+      total: classifications.length,
+      by_category: {},
+      average_risk_score: 0
+    };
+    
+    let totalRisk = 0;
+    
+    classifications.forEach(classification => {
+      const category = classification.category;
+      stats.by_category[category] = (stats.by_category[category] || 0) + 1;
+      totalRisk += classification.risk_score || 0;
+    });
+    
+    stats.average_risk_score = classifications.length > 0 ? 
+      Math.round(totalRisk / classifications.length) : 0;
+    
+    await chrome.storage.local.set({ classificationStats: stats });
+    
+  } catch (error) {
+    console.error('[CookieClassifier] Error updating statistics:', error);
+  }
+}
+
+/**
+ * Update privacy score based on cookie classifications
+ */
+function updatePrivacyScoreFromClassifications(stats) {
+  try {
+    // Calculate score based on cookie risk
+    // Lower risk = higher privacy score
+    const avgRisk = stats.average_risk_score || 50;
+    const privacyScore = Math.max(0, Math.min(100, 100 - avgRisk));
+    
+    // Weight by number of tracking cookies
+    const trackingCookies = 
+      (stats.by_category.analytics || 0) + 
+      (stats.by_category.advertising || 0) +
+      (stats.by_category.social_media || 0);
+    
+    const totalCookies = stats.total_cookies || 1;
+    const trackingRatio = trackingCookies / totalCookies;
+    
+    // Adjust score based on tracking ratio
+    const adjustedScore = Math.round(privacyScore * (1 - trackingRatio * 0.3));
+    
+    chrome.storage.local.set({ 
+      privacyScore: adjustedScore,
+      lastScoreUpdate: Date.now()
+    });
+    
+    console.log(`[CookieClassifier] Privacy score updated to ${adjustedScore}`);
+    
+  } catch (error) {
+    console.error('[CookieClassifier] Error updating privacy score:', error);
+  }
+}
+
+/**
+ * Monitor for new cookies being set
+ */
+chrome.cookies.onChanged.addListener((changeInfo) => {
+  if (!changeInfo.removed && changeInfo.cookie) {
+    // New cookie detected
+    console.log(`[CookieClassifier] New cookie detected: ${changeInfo.cookie.name}`);
+    classifyNewCookie(changeInfo.cookie);
+  }
+});
+
+/**
+ * Re-classify all cookies periodically (every 30 minutes)
+ */
+setInterval(() => {
+  console.log('[CookieClassifier] Running periodic cookie re-classification...');
+  classifyAllCookies();
+}, 1800000); // 30 minutes

@@ -259,6 +259,13 @@ function setupCookieEventListeners() {
     viewToggle.addEventListener('change', async function(e) {
       activeTabOnly = e.target.checked;
       console.log('[Dashboard] View mode:', activeTabOnly ? 'Active Tab' : 'All Cookies');
+      
+      // Show/hide site info banner
+      const siteInfo = document.getElementById('currentSiteInfo');
+      if (siteInfo) {
+        siteInfo.classList.toggle('hidden', !activeTabOnly);
+      }
+      
       await loadCookies();
     });
   }
@@ -304,6 +311,17 @@ async function loadCookies() {
         return;
       }
       
+      // Update site info display
+      const siteUrlElement = document.getElementById('currentSiteUrl');
+      if (siteUrlElement) {
+        try {
+          const url = new URL(activeTabUrl);
+          siteUrlElement.textContent = url.hostname;
+        } catch {
+          siteUrlElement.textContent = activeTabUrl;
+        }
+      }
+      
       console.log('[Dashboard] Fetching cookies for:', activeTabUrl);
       allCookies = await CookieManager.fetchCookiesForUrl(activeTabUrl);
     } else {
@@ -315,19 +333,40 @@ async function loadCookies() {
     
     // 🆕 CLASSIFY COOKIES USING SERVERLESS API
     if (allCookies.length > 0 && typeof CookieClassifier !== 'undefined') {
-      console.log('[Dashboard] Classifying cookies with AI model...');
+      console.log(`[Dashboard] Classifying ${allCookies.length} cookies with AI model (this may take a moment for large batches)...`);
+      
+      // Show loading indicator
+      showCookieLoading();
+      
       const cookieNames = allCookies.map(c => c.name);
       const classifications = await CookieClassifier.classifyCookiesBatch(cookieNames);
       
       // Merge classification data with cookie objects
-      allCookies = allCookies.map((cookie, idx) => ({
-        ...cookie,
-        classification: classifications[idx]
-      }));
+      allCookies = allCookies.map((cookie, idx) => {
+        const classification = classifications[idx];
+        console.log(`[Dashboard] Cookie "${cookie.name}" classified as:`, classification?.category, `(class_id: ${classification?.class_id})`);
+        return {
+          ...cookie,
+          classification: classification
+        };
+      });
+      
+      // Filter out cookies that failed API classification
+      const beforeFilter = allCookies.length;
+      allCookies = allCookies.filter(cookie => {
+        const hasValidClassification = cookie.classification?.class_id !== null && cookie.classification?.class_id !== undefined;
+        if (!hasValidClassification) {
+          console.warn(`[Dashboard] Removing cookie "${cookie.name}" - API classification failed`);
+        }
+        return hasValidClassification;
+      });
+      console.log(`[Dashboard] Filtered cookies: ${beforeFilter} total → ${allCookies.length} with valid API classifications (${beforeFilter - allCookies.length} removed)`);
       
       // Log statistics
       const stats = CookieClassifier.getStatistics(classifications);
       console.log('[Dashboard] Classification stats:', stats);
+    } else {
+      console.warn('[Dashboard] CookieClassifier not available or no cookies to classify');
     }
     
     filterAndRenderCookies();
@@ -357,19 +396,62 @@ function filterAndRenderCookies() {
       showCookieEmpty(`No cookies match "${searchQuery}"`);
     }
   } else {
-    renderAdCookies(displayedCookies);
+    renderCookiesByCategory(displayedCookies);
   }
 }
 
 /**
- * Render cookies in Ad Cookies section
+ * Render cookies separated by category into their respective sections
  */
-function renderAdCookies(cookies) {
-  const container = document.getElementById('adCookiesContainer');
-  const countElement = document.getElementById('adCookiesCount');
+function renderCookiesByCategory(cookies) {
+  // Separate cookies by classification
+  const categorizedCookies = {
+    0: [], // Strictly Necessary
+    1: [], // Functionality
+    2: [], // Analytics
+    3: []  // Advertising/Tracking
+  };
+  
+  cookies.forEach(cookie => {
+    const classId = cookie.classification?.class_id;
+    
+    // Skip cookies that failed classification or have no API result
+    if (classId === null || classId === undefined) {
+      console.warn(`[Dashboard] Cookie "${cookie.name}" has NO valid API classification - skipping display`);
+      return;
+    }
+    
+    if (categorizedCookies[classId] !== undefined) {
+      categorizedCookies[classId].push(cookie);
+    } else {
+      console.error(`[Dashboard] Invalid class_id ${classId} for cookie "${cookie.name}" - skipping`);
+    }
+  });
+  
+  console.log('[Dashboard] ✅ Categorized cookies by API classification:', {
+    'Strictly Necessary (0)': categorizedCookies[0].length,
+    'Functionality (1)': categorizedCookies[1].length,
+    'Analytics (2)': categorizedCookies[2].length,
+    'Advertising/Tracking (3)': categorizedCookies[3].length,
+    'Total': cookies.length
+  });
+  
+  // Render each category
+  renderCookiesInSection('strictlyNecessaryCookies', categorizedCookies[0]);
+  renderCookiesInSection('functionalityCookies', categorizedCookies[1]);
+  renderCookiesInSection('analyticsCookies', categorizedCookies[2]);
+  renderCookiesInSection('advertisingTrackingCookies', categorizedCookies[3]);
+}
+
+/**
+ * Render cookies in a specific category section
+ */
+function renderCookiesInSection(sectionId, cookies) {
+  const container = document.getElementById(`${sectionId}Container`);
+  const countElement = document.getElementById(`${sectionId}Count`);
   
   if (!container) {
-    console.error('[Dashboard] Ad cookies container not found!');
+    console.error(`[Dashboard] ${sectionId} container not found!`);
     return;
   }
   
@@ -381,8 +463,18 @@ function renderAdCookies(cookies) {
   // Clear container
   container.innerHTML = '';
   
-  // Apply max height for scrolling if > 200 cookies
-  if (cookies.length > 200) {
+  // If no cookies in this category, show empty message
+  if (cookies.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8 text-white/40">
+        <p>No cookies in this category</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Apply max height for scrolling if > 50 cookies per section
+  if (cookies.length > 50) {
     container.style.maxHeight = '600px';
     container.style.overflowY = 'auto';
   } else {
@@ -396,22 +488,15 @@ function renderAdCookies(cookies) {
     container.appendChild(cookieCard);
   });
   
-  console.log(`[Dashboard] Rendered ${cookies.length} cookie cards`);
+  console.log(`[Dashboard] Rendered ${cookies.length} cookies in ${sectionId}`);
 }
 
 /**
  * Create a cookie card element
  */
 function createCookieCard(cookie) {
-  // 🆕 Get AI classification (or use default)
-  const classification = cookie.classification || {
-    category: 'Advertising/Tracking',
-    class_id: 3,
-    bgColor: 'bg-red-500/10',
-    textColor: 'text-red-400',
-    borderColor: 'border-red-500/30',
-    icon: '🎯'
-  };
+  // Get API classification - if missing, cookie shouldn't be displayed
+  const classification = cookie.classification;
   
   const card = document.createElement('div');
   // 🆕 Use dynamic colors based on classification
@@ -502,78 +587,99 @@ function createCookieCard(cookie) {
 }
 
 /**
- * Show loading state
+ * Show loading state in all sections
  */
 function showCookieLoading() {
-  const container = document.getElementById('adCookiesContainer');
-  const countElement = document.getElementById('adCookiesCount');
+  const sections = [
+    'strictlyNecessaryCookies',
+    'functionalityCookies', 
+    'analyticsCookies',
+    'advertisingTrackingCookies'
+  ];
   
-  if (countElement) countElement.textContent = '...';
-  
-  if (container) {
-    container.innerHTML = `
-      <div class="flex items-center justify-center py-12">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <span class="ml-4 text-white/60">Loading cookies...</span>
-      </div>
-    `;
-  }
+  sections.forEach(sectionId => {
+    const container = document.getElementById(`${sectionId}Container`);
+    const countElement = document.getElementById(`${sectionId}Count`);
+    
+    if (countElement) countElement.textContent = '...';
+    
+    if (container) {
+      container.innerHTML = `
+        <div class="flex items-center justify-center py-8">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span class="ml-3 text-white/60 text-sm">Loading...</span>
+        </div>
+      `;
+    }
+  });
 }
 
 /**
- * Show empty state
+ * Show empty state in all sections
  */
 function showCookieEmpty(message) {
-  const container = document.getElementById('adCookiesContainer');
-  const countElement = document.getElementById('adCookiesCount');
+  const sections = [
+    'strictlyNecessaryCookies',
+    'functionalityCookies', 
+    'analyticsCookies',
+    'advertisingTrackingCookies'
+  ];
   
-  if (countElement) countElement.textContent = '0';
-  
-  if (container) {
-    container.innerHTML = `
-      <div class="flex flex-col items-center justify-center py-12 text-center">
-        <svg class="w-16 h-16 text-white/20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-        </svg>
-        <p class="text-white/60 text-lg mb-2">No Cookies Found</p>
-        <p class="text-white/40 text-sm">${escapeHtml(message)}</p>
-      </div>
-    `;
-  }
+  sections.forEach(sectionId => {
+    const container = document.getElementById(`${sectionId}Container`);
+    const countElement = document.getElementById(`${sectionId}Count`);
+    
+    if (countElement) countElement.textContent = '0';
+    
+    if (container) {
+      container.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-8 text-center">
+          <svg class="w-12 h-12 text-white/20 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+          </svg>
+          <p class="text-white/60 text-sm mb-1">No Cookies Found</p>
+          <p class="text-white/40 text-xs">${escapeHtml(message)}</p>
+        </div>
+      `;
+    }
+  });
 }
 
 /**
- * Show error state
+ * Show error state in all sections
  */
 function showCookieError(message) {
-  const container = document.getElementById('adCookiesContainer');
-  const countElement = document.getElementById('adCookiesCount');
+  const sections = [
+    'strictlyNecessaryCookies',
+    'functionalityCookies', 
+    'analyticsCookies',
+    'advertisingTrackingCookies'
+  ];
   
-  if (countElement) countElement.textContent = '0';
-  
-  if (container) {
-    container.innerHTML = `
-      <div class="flex flex-col items-center justify-center py-12 text-center">
-        <svg class="w-16 h-16 text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-        </svg>
-        <p class="text-red-400 text-lg mb-2">Error Loading Cookies</p>
-        <p class="text-white/60 text-sm mb-4">${escapeHtml(message)}</p>
-        <button 
-          id="retryCookiesBtn"
-          class="px-4 py-2 bg-primary text-secondary rounded-lg font-semibold hover:bg-[#dffb2f] transition-colors"
-        >
-          Retry
-        </button>
-      </div>
-    `;
+  sections.forEach(sectionId => {
+    const container = document.getElementById(`${sectionId}Container`);
+    const countElement = document.getElementById(`${sectionId}Count`);
     
-    // Add retry handler
-    const retryBtn = container.querySelector('#retryCookiesBtn');
-    if (retryBtn) {
-      retryBtn.addEventListener('click', loadCookies);
+    if (countElement) countElement.textContent = '0';
+    
+    if (container) {
+      container.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-8 text-center">
+          <svg class="w-12 h-12 text-red-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+          </svg>
+          <p class="text-red-400 text-sm mb-2">Error Loading Cookies</p>
+          <p class="text-white/60 text-xs mb-3">${escapeHtml(message)}</p>
+          <button 
+            class="retryCookiesBtn px-3 py-1.5 bg-primary text-secondary rounded-lg text-xs font-semibold hover:bg-[#dffb2f] transition-colors"
+            onclick="loadCookies()"
+          >
+            Retry
+          </button>
+        </div>
+      `;
     }
-  }
+  });
 }
 
 /**

@@ -14,6 +14,11 @@ const CookieClassifier = {
   // Classification cache to avoid redundant API calls
   cache: new Map(),
   
+  // Rate limiting configuration for optimized batch API
+  MAX_BATCH_SIZE: 100,       // Cookies per batch request (vectorized processing on server)
+  MAX_CONCURRENT: 20,        // Max concurrent requests (fallback only)
+  DELAY_BETWEEN_BATCHES: 0,  // No delay needed - batch API is fast
+  
   // Category mapping with UI colors and labels
   CATEGORIES: {
     0: { 
@@ -97,22 +102,91 @@ const CookieClassifier = {
     } catch (error) {
       console.error('[CookieClassifier] Error classifying cookie:', error);
       
-      // Fallback: classify as Advertising/Tracking (safest default for privacy)
-      const fallback = {
-        category: 'Advertising/Tracking',
-        class_id: 3,
+      // Return null - don't classify if API fails
+      // This cookie will be filtered out and not displayed
+      const failed = {
+        category: null,
+        class_id: null,
         confidence: null,
-        ...this.CATEGORIES[3],
         error: true
       };
       
-      this.cache.set(cookieName, fallback);
-      return fallback;
+      this.cache.set(cookieName, failed);
+      return failed;
     }
   },
   
   /**
-   * Classify multiple cookies in a single batch request (more efficient)
+   * Helper: Sleep for specified milliseconds
+   */
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  },
+
+  /**
+   * Helper: Process a batch using optimized batch API endpoint
+   */
+  async processBatch(batch) {
+    try {
+      // Use optimized batch endpoint
+      const response = await fetch(this.API_URL_BATCH, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ cookie_names: batch })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Batch API returned ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.predictions || data;
+      
+    } catch (error) {
+      console.warn(`[CookieClassifier] Batch API failed, using individual fallback:`, error.message);
+      
+      // Fallback: Process individually with concurrency control
+      const results = [];
+      for (let i = 0; i < batch.length; i += this.MAX_CONCURRENT) {
+        const chunk = batch.slice(i, i + this.MAX_CONCURRENT);
+        const chunkResults = await Promise.all(
+          chunk.map(async (cookieName) => {
+            try {
+              const res = await fetch(this.API_URL, {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json'
+                },
+                body: JSON.stringify({ cookie_name: cookieName })
+              });
+              
+              if (!res.ok) throw new Error(`API returned ${res.status}`);
+              return await res.json();
+            } catch (err) {
+              console.warn(`[CookieClassifier] Failed to classify ${cookieName}:`, err.message);
+              return {
+                cookie_name: cookieName,
+                category: null,
+                class_id: null,
+                confidence: null,
+                error: true
+              };
+            }
+          })
+        );
+        results.push(...chunkResults);
+      }
+      
+      return results;
+    }
+  },
+
+  /**
+   * Classify multiple cookies with smart batching and rate limiting
    * @param {Array<string>} cookieNames - Array of cookie names to classify
    * @returns {Promise<Array<Object>>} Array of classification results
    */
@@ -144,104 +218,76 @@ const CookieClassifier = {
     }
     
     try {
-      console.log(`[CookieClassifier] Calling batch API with ${uncached.length} cookies...`);
+      // Split uncached cookies into manageable batches
+      const batches = [];
+      for (let i = 0; i < uncached.length; i += this.MAX_BATCH_SIZE) {
+        batches.push(uncached.slice(i, i + this.MAX_BATCH_SIZE));
+      }
       
-      // Try batch endpoint first
-      const response = await fetch(this.API_URL_BATCH, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ cookie_names: uncached })
-      });
+      console.log(`[CookieClassifier] Processing ${uncached.length} cookies in ${batches.length} groups (${this.MAX_CONCURRENT} concurrent requests per group)...`);
       
-      if (!response.ok) {
-        // Batch endpoint not available, fallback to individual predictions
-        console.log(`[CookieClassifier] Batch API not available (${response.status}), using individual predictions...`);
+      // Process multiple batches in parallel for maximum speed
+      let processedCount = 0;
+      const MAX_PARALLEL_BATCHES = 5; // Process 5 groups simultaneously
+      
+      for (let i = 0; i < batches.length; i += MAX_PARALLEL_BATCHES) {
+        const parallelBatches = batches.slice(i, i + MAX_PARALLEL_BATCHES);
+        console.log(`[CookieClassifier] Processing batches ${i + 1}-${Math.min(i + MAX_PARALLEL_BATCHES, batches.length)}/${batches.length}...`);
         
-        const predictions = await Promise.all(
-          uncached.map(async (cookieName) => {
-            try {
-              const res = await fetch(this.API_URL, {
-                method: 'POST',
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json'
-                },
-                body: JSON.stringify({ cookie_name: cookieName })
-              });
+        // Process these batches in parallel
+        const batchPromises = parallelBatches.map(batch => this.processBatch(batch));
+        const batchResults = await Promise.all(batchPromises);
+        
+        // Process all results from parallel batches
+        batchResults.forEach(predictions => {
+          predictions.forEach(pred => {
+            if (pred.class_id !== null && pred.class_id !== undefined) {
+              const categoryInfo = this.CATEGORIES[pred.class_id];
+              const result = {
+                category: pred.category,
+                class_id: pred.class_id,
+                confidence: pred.confidence || null,
+                ...categoryInfo,
+                error: pred.error || false
+              };
               
-              if (!res.ok) throw new Error(`API returned ${res.status}`);
-              return await res.json();
-            } catch (err) {
-              console.warn(`[CookieClassifier] Failed to classify ${cookieName}:`, err.message);
-              return {
-                cookie_name: cookieName,
-                category: 'Advertising/Tracking',
-                class_id: 3,
+              this.cache.set(pred.cookie_name, result);
+              results.set(pred.cookie_name, result);
+              processedCount++;
+            } else {
+              // Mark as failed
+              const failed = {
+                category: null,
+                class_id: null,
                 confidence: null,
                 error: true
               };
+              this.cache.set(pred.cookie_name, failed);
+              results.set(pred.cookie_name, failed);
             }
-          })
-        );
-        
-        // Process fallback results
-        predictions.forEach(pred => {
-          const categoryInfo = this.CATEGORIES[pred.class_id];
-          const result = {
-            category: pred.category,
-            class_id: pred.class_id,
-            confidence: pred.confidence || null,
-            ...categoryInfo,
-            error: pred.error || false
-          };
-          
-          this.cache.set(pred.cookie_name, result);
-          results.set(pred.cookie_name, result);
-          
-          console.log(`[CookieClassifier] ✓ ${pred.cookie_name} → ${result.category}`);
+          });
         });
         
-        console.log(`[CookieClassifier] ✓ Individual classification complete (fallback mode)`);
-      } else {
-        // Batch endpoint succeeded
-        const data = await response.json();
-        
-        // Process and cache the new results
-        data.predictions.forEach(pred => {
-          const categoryInfo = this.CATEGORIES[pred.class_id];
-          const result = {
-            category: pred.category,
-            class_id: pred.class_id,
-            confidence: pred.confidence || null,
-            ...categoryInfo
-          };
-          
-          this.cache.set(pred.cookie_name, result);
-          results.set(pred.cookie_name, result);
-          
-          console.log(`[CookieClassifier] ✓ ${pred.cookie_name} → ${result.category}`);
-        });
-        
-        console.log(`[CookieClassifier] ✓ Batch classification complete`);
+        console.log(`[CookieClassifier] ✓ Processed ${processedCount}/${uncached.length} cookies`);
       }
+      
+      console.log(`[CookieClassifier] ✅ All batches complete: ${processedCount}/${uncached.length} cookies classified successfully`);
       
     } catch (error) {
       console.error('[CookieClassifier] Batch classification error:', error);
       
-      // Fallback: classify all uncached as Advertising/Tracking
+      // Mark all uncached cookies as failed (will be filtered out)
       uncached.forEach(name => {
-        const fallback = {
-          category: 'Advertising/Tracking',
-          class_id: 3,
-          confidence: null,
-          ...this.CATEGORIES[3],
-          error: true
-        };
-        this.cache.set(name, fallback);
-        results.set(name, fallback);
+        if (!results.has(name)) {
+          const failed = {
+            category: null,
+            class_id: null,
+            confidence: null,
+            error: true
+          };
+          this.cache.set(name, failed);
+          results.set(name, failed);
+        }
       });
     }
     

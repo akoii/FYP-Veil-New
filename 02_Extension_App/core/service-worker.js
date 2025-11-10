@@ -12,6 +12,11 @@ chrome.runtime.onInstalled.addListener(() => {
   setupBlockingRules();
 });
 
+// Open side panel when extension icon is clicked
+chrome.action.onClicked.addListener((tab) => {
+  chrome.sidePanel.open({ windowId: tab.windowId });
+});
+
 // Initialize default extension settings
 async function initializeSettings() {
   const defaults = {

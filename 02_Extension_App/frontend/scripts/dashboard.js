@@ -992,7 +992,7 @@ function updateHardwareCounters(permissions) {
 }
 
 /**
- * Update hardware activity log display
+ * Update hardware activity log display (Phase 4 Enhanced)
  */
 function updateHardwareActivityLog(activityLog) {
   const logContainer = document.getElementById('hardwareActivityLog');
@@ -1010,14 +1010,32 @@ function updateHardwareActivityLog(activityLog) {
     return;
   }
   
-  // Generate activity items HTML
+  // Generate activity items HTML with Phase 4 enhancements
   const activityHTML = activityLog.slice(0, 10).map(item => {
     const icon = getHardwareIcon(item.type);
     const color = getHardwareColor(item.type);
     const timeAgo = getTimeAgo(item.timestamp);
-    const actionBadge = item.action === 'blocked' 
-      ? '<span class="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs">Blocked</span>'
-      : '<span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">Allowed</span>';
+    
+    // Enhanced action badges with detection method
+    let actionBadge = '';
+    if (item.action === 'blocked') {
+      actionBadge = '<span class="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs">🛡️ Blocked</span>';
+    } else if (item.action.includes('api_call_detected')) {
+      actionBadge = '<span class="px-2 py-1 bg-orange-500/20 text-orange-400 rounded text-xs">🔍 API Detected</span>';
+    } else if (item.action.includes('suspicious')) {
+      actionBadge = '<span class="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded text-xs">⚠️ Suspicious</span>';
+    } else if (item.action.includes('requested')) {
+      actionBadge = '<span class="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs">📋 Requested</span>';
+    } else {
+      actionBadge = '<span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">✓ Allowed</span>';
+    }
+    
+    // Display domain or formatted URL
+    const displayUrl = item.domain || formatUrl(item.url);
+    
+    // Detection method badge (Phase 4)
+    const detectionMethod = item.detectionMethod || 'Unknown';
+    const detectionBadge = `<span class="text-xs text-white/30">${detectionMethod}</span>`;
     
     return `
       <div class="flex items-start gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
@@ -1025,12 +1043,16 @@ function updateHardwareActivityLog(activityLog) {
           ${icon}
         </div>
         <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 mb-1">
-            <h4 class="text-white font-medium truncate">${formatUrl(item.url)}</h4>
+          <div class="flex items-center gap-2 mb-1 flex-wrap">
+            <h4 class="text-white font-medium truncate">${displayUrl}</h4>
             ${actionBadge}
           </div>
           <p class="text-xs text-white/60">Requested ${item.type} access</p>
-          <p class="text-xs text-white/40 mt-1">${timeAgo}</p>
+          <div class="flex items-center gap-3 mt-1 text-xs">
+            <span class="text-white/40">${timeAgo}</span>
+            <span class="text-white/20">•</span>
+            ${detectionBadge}
+          </div>
         </div>
       </div>
     `;

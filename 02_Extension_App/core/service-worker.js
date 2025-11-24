@@ -447,6 +447,250 @@ async function initializeHardwarePermissions() {
 }
 
 /**
+ * ============================================
+ * PHASE 4: Advanced Permission Request Detection
+ * ============================================
+ */
+
+// Track active tabs requesting permissions
+const activePermissionRequests = new Map();
+
+// Track domains with suspicious permission patterns
+const suspiciousDomains = new Set();
+
+/**
+ * Monitor web navigation for permission API usage
+ */
+chrome.webNavigation.onDOMContentLoaded.addListener(async (details) => {
+  if (details.frameId === 0) { // Main frame only
+    try {
+      const tab = await chrome.tabs.get(details.tabId);
+      if (tab.url) {
+        await detectPermissionRequests(details.tabId, tab.url);
+      }
+    } catch (error) {
+      console.error('[PermissionDetector] Error processing navigation:', error);
+    }
+  }
+});
+
+/**
+ * Detect potential permission requests from page content
+ */
+async function detectPermissionRequests(tabId, url) {
+  try {
+    const urlObj = new URL(url);
+    const domain = urlObj.hostname;
+
+    // Check if domain has pattern of requesting multiple permissions
+    const stored = await chrome.storage.local.get('hardwareActivityLog');
+    const log = stored.hardwareActivityLog || [];
+    
+    // Count recent requests from this domain
+    const recentRequests = log.filter(entry => {
+      const entryUrl = entry.url || '';
+      const timeDiff = Date.now() - entry.timestamp;
+      return entryUrl.includes(domain) && timeDiff < 300000; // Last 5 minutes
+    });
+
+    if (recentRequests.length >= 3) {
+      suspiciousDomains.add(domain);
+      console.log(`[PermissionDetector] Suspicious domain detected: ${domain} (${recentRequests.length} requests)`);
+      
+      // Log suspicious activity
+      await logHardwareAccess('multiple', url, 'suspicious_pattern_detected');
+    }
+
+  } catch (error) {
+    console.error('[PermissionDetector] Error detecting permission requests:', error);
+  }
+}
+
+/**
+ * Monitor tab updates for permission-related changes
+ */
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' && tab.url) {
+    try {
+      // Check for permission-sensitive pages
+      await checkPermissionSensitivePage(tabId, tab.url);
+    } catch (error) {
+      console.error('[PermissionDetector] Error checking tab update:', error);
+    }
+  }
+});
+
+/**
+ * Check if page is known to request sensitive permissions
+ */
+async function checkPermissionSensitivePage(tabId, url) {
+  try {
+    const urlObj = new URL(url);
+    const domain = urlObj.hostname;
+    
+    // List of known permission-requesting patterns
+    const sensitivePatterns = [
+      /meet\.|zoom\.|teams\.|webex\./i,  // Video conferencing
+      /camera|webcam|video|streaming/i,  // Camera-related
+      /maps\.|location|gps|geo/i,        // Location services
+      /notification|alert|push/i          // Notifications
+    ];
+
+    const isSensitive = sensitivePatterns.some(pattern => 
+      pattern.test(domain) || pattern.test(urlObj.pathname)
+    );
+
+    if (isSensitive) {
+      console.log(`[PermissionDetector] Permission-sensitive page detected: ${domain}`);
+      
+      // Pre-emptively prepare blocking
+      const stored = await chrome.storage.local.get('hardwarePermissions');
+      const permissions = stored.hardwarePermissions || {};
+      
+      // Check which permissions are blocked
+      const blockedTypes = Object.entries(permissions)
+        .filter(([type, config]) => config.blocked)
+        .map(([type]) => type);
+      
+      if (blockedTypes.length > 0) {
+        console.log(`[PermissionDetector] Active blocks for ${domain}:`, blockedTypes.join(', '));
+      }
+    }
+
+  } catch (error) {
+    // Ignore invalid URLs
+    if (!(error instanceof TypeError)) {
+      console.error('[PermissionDetector] Error checking sensitive page:', error);
+    }
+  }
+}
+
+/**
+ * Enhanced permission request detection via declarativeNetRequest
+ */
+chrome.declarativeNetRequest.onRuleMatchedDebug?.addListener((details) => {
+  // Log blocked requests for analysis
+  console.log('[PermissionDetector] Rule matched:', details);
+});
+
+/**
+ * Monitor specific API calls that indicate permission requests
+ */
+chrome.webRequest.onBeforeRequest.addListener(
+  async (details) => {
+    // Detect getUserMedia (camera/microphone) requests
+    if (details.type === 'xmlhttprequest' || details.type === 'script') {
+      const url = details.url.toLowerCase();
+      
+      // Check for WebRTC/media-related patterns
+      if (url.includes('getusermedia') || 
+          url.includes('mediadevices') ||
+          url.includes('rtc') ||
+          url.includes('webrtc')) {
+        
+        console.log('[PermissionDetector] Media API request detected from:', details.url);
+        
+        // Log as camera/microphone request attempt
+        try {
+          const tab = await chrome.tabs.get(details.tabId);
+          if (tab.url) {
+            await logHardwareAccess('camera', tab.url, 'api_call_detected');
+            await logHardwareAccess('microphone', tab.url, 'api_call_detected');
+          }
+        } catch (error) {
+          console.error('[PermissionDetector] Error logging media request:', error);
+        }
+      }
+      
+      // Check for geolocation patterns
+      if (url.includes('geolocation') || 
+          url.includes('location') ||
+          url.includes('coords') ||
+          url.includes('position')) {
+        
+        console.log('[PermissionDetector] Location API request detected from:', details.url);
+        
+        try {
+          const tab = await chrome.tabs.get(details.tabId);
+          if (tab.url) {
+            await logHardwareAccess('location', tab.url, 'api_call_detected');
+          }
+        } catch (error) {
+          console.error('[PermissionDetector] Error logging location request:', error);
+        }
+      }
+    }
+  },
+  { urls: ['<all_urls>'] },
+  []
+);
+
+/**
+ * Track permission state changes across tabs
+ */
+const permissionStateCache = new Map();
+
+/**
+ * Get permission state for a specific origin
+ */
+async function getPermissionState(origin, permissionType) {
+  try {
+    const cacheKey = `${origin}_${permissionType}`;
+    
+    // Check cache first
+    if (permissionStateCache.has(cacheKey)) {
+      const cached = permissionStateCache.get(cacheKey);
+      if (Date.now() - cached.timestamp < 30000) { // 30 seconds cache
+        return cached.state;
+      }
+    }
+
+    // Query Chrome's contentSettings
+    let setting = 'allow'; // default
+    switch(permissionType) {
+      case 'camera':
+        setting = await chrome.contentSettings.camera.get({ primaryUrl: origin });
+        break;
+      case 'microphone':
+        setting = await chrome.contentSettings.microphone.get({ primaryUrl: origin });
+        break;
+      case 'location':
+        setting = await chrome.contentSettings.location.get({ primaryUrl: origin });
+        break;
+      case 'notifications':
+        setting = await chrome.contentSettings.notifications.get({ primaryUrl: origin });
+        break;
+    }
+
+    // Cache the result
+    permissionStateCache.set(cacheKey, {
+      state: setting.setting,
+      timestamp: Date.now()
+    });
+
+    return setting.setting;
+
+  } catch (error) {
+    console.error('[PermissionDetector] Error getting permission state:', error);
+    return 'unknown';
+  }
+}
+
+/**
+ * Clear permission state cache periodically
+ */
+setInterval(() => {
+  permissionStateCache.clear();
+  console.log('[PermissionDetector] Permission cache cleared');
+}, 60000); // Every minute
+
+/**
+ * ============================================
+ * Continue with existing hardware control functions
+ * ============================================
+ */
+
+/**
  * Apply hardware blocking using Chrome ContentSettings API
  */
 async function applyHardwareBlock(permissionType, shouldBlock) {
@@ -531,7 +775,7 @@ async function toggleHardwarePermission(permissionType, shouldBlock) {
 }
 
 /**
- * Log hardware access attempts
+ * Log hardware access attempts with enhanced metadata (Phase 4)
  */
 async function logHardwareAccess(permissionType, url, action) {
   try {
@@ -544,22 +788,48 @@ async function logHardwareAccess(permissionType, url, action) {
       notifications: { blocked: true, count: 0 }
     };
 
-    // Add to activity log
-    log.unshift({
-      type: permissionType,
-      url: url,
-      action: action,
-      timestamp: Date.now()
-    });
-
-    // Keep only last 50 entries
-    if (log.length > 50) {
-      log.pop();
+    // Extract domain from URL for better display
+    let domain = 'Unknown';
+    try {
+      if (url && url !== '<all_urls>') {
+        const urlObj = new URL(url);
+        domain = urlObj.hostname;
+      } else if (url === '<all_urls>') {
+        domain = 'All Websites';
+      }
+    } catch (error) {
+      domain = url;
     }
 
-    // Update permission counter if blocked
-    if (action === 'blocked' && permissions[permissionType]) {
+    // Add to activity log with enhanced metadata
+    const logEntry = {
+      type: permissionType,
+      url: url,
+      domain: domain,
+      action: action,
+      timestamp: Date.now(),
+      // Phase 4: Additional detection metadata
+      detectionMethod: action.includes('api_call') ? 'API Detection' : 
+                       action.includes('suspicious') ? 'Pattern Analysis' : 
+                       action.includes('requested') ? 'Browser Event' : 
+                       'Manual Toggle'
+    };
+
+    log.unshift(logEntry);
+
+    // Keep only last 100 entries (increased from 50 for better tracking)
+    if (log.length > 100) {
+      log.splice(100);
+    }
+
+    // Update permission counter if blocked or detected
+    if ((action === 'blocked' || action.includes('detected')) && permissions[permissionType]) {
       permissions[permissionType].count++;
+    }
+
+    // Special handling for suspicious patterns
+    if (action.includes('suspicious')) {
+      console.warn(`[PermissionDetector] 🚨 Suspicious pattern detected for ${permissionType} from ${domain}`);
     }
 
     // Update hardware access blocked counter
@@ -577,7 +847,7 @@ async function logHardwareAccess(permissionType, url, action) {
     // Update privacy score
     calculatePrivacyScore();
 
-    console.log(`[HardwareControl] Logged: ${permissionType} ${action} for ${url}`);
+    console.log(`[HardwareControl] Logged: ${permissionType} ${action} for ${domain} (Method: ${logEntry.detectionMethod})`);
 
   } catch (error) {
     console.error('[HardwareControl] Error logging hardware access:', error);

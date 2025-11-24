@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Veil Privacy Extension",
+  "version": "1.0.0",
+  "description": "Advanced privacy protection with AI-powered tracker detection",
+  "permissions": [
+    "cookies",
+    "storage",
+    "tabs",
+    "webRequest",
+    "webNavigation",
+    "contentSettings",
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback",
+    "privacy",
+    "notifications"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "core/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "frontend/pages/popup.html",
+    "default_icon": {
+      "16": "frontend/assets/icon16.png",
+      "48": "frontend/assets/icon48.png",
+      "128": "frontend/assets/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "frontend/assets/icon16.png",
+    "48": "frontend/assets/icon48.png",
+    "128": "frontend/assets/icon128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

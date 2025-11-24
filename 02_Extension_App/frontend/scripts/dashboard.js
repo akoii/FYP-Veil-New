@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initializeCookieManagement(); // ✅ NEW: Initialize cookie feature
   initializeTimeframeToggle(); // ✅ NEW: Initialize timeframe toggle
   initializeHardwareControls(); // ✅ PHASE 3: Initialize hardware controls
+  loadRealStatistics(); // ✅ PHASE 5: Load real statistics from storage
 });
 
 function initializeCharts() {
@@ -1207,5 +1208,284 @@ async function clearHardwareLog() {
     }
   } catch (error) {
     console.error('[HardwareControls] Error clearing log:', error);
+  }
+}
+
+/**
+ * ============================================
+ * PHASE 5: Real Statistics Display System
+ * ============================================
+ */
+
+/**
+ * Load and display real statistics from Chrome storage
+ */
+async function loadRealStatistics() {
+  console.log('[Statistics] Loading real statistics from storage...');
+  
+  try {
+    // Get all statistics from service worker
+    const response = await chrome.runtime.sendMessage({ action: 'getStats' });
+    
+    if (response) {
+      // Update privacy score
+      updatePrivacyScore(response.privacyScore || 0);
+      
+      // Update blocked items statistics
+      updateBlockedItemsStats(response);
+      
+      // Update score breakdown chart
+      updateScoreBreakdownChart(response);
+      
+      // Set up auto-refresh every 10 seconds
+      setInterval(async () => {
+        const updatedStats = await chrome.runtime.sendMessage({ action: 'getStats' });
+        if (updatedStats) {
+          updatePrivacyScore(updatedStats.privacyScore || 0);
+          updateBlockedItemsStats(updatedStats);
+          updateScoreBreakdownChart(updatedStats);
+        }
+      }, 10000);
+      
+      console.log('[Statistics] Real statistics loaded successfully');
+    }
+  } catch (error) {
+    console.error('[Statistics] Error loading statistics:', error);
+  }
+}
+
+/**
+ * Update privacy score display with animation
+ */
+function updatePrivacyScore(score) {
+  const scoreElement = document.getElementById('privacyScoreValue');
+  const circleElement = document.getElementById('privacyScoreCircle');
+  const messageElement = document.getElementById('privacyScoreMessage');
+  
+  if (!scoreElement || !circleElement) return;
+  
+  // Animate score number
+  const currentScore = parseInt(scoreElement.textContent) || 0;
+  animateValue(scoreElement, currentScore, score, 1000);
+  
+  // Update circle progress
+  const circumference = 2 * Math.PI * 40; // radius = 40
+  const offset = circumference - (score / 100) * circumference;
+  circleElement.style.strokeDasharray = circumference;
+  circleElement.style.strokeDashoffset = offset;
+  
+  // Update message based on score
+  if (messageElement) {
+    let message = '';
+    let color = '';
+    
+    if (score >= 80) {
+      message = '🎉 Excellent Protection!';
+      color = '#EBFF3D'; // Green
+      circleElement.style.stroke = '#EBFF3D';
+    } else if (score >= 60) {
+      message = '✅ Good Protection';
+      color = '#4DD4E8'; // Cyan
+      circleElement.style.stroke = '#4DD4E8';
+    } else if (score >= 40) {
+      message = '⚠️ Moderate Protection';
+      color = '#FFB366'; // Orange
+      circleElement.style.stroke = '#FFB366';
+    } else {
+      message = '🚨 Weak Protection';
+      color = '#FF6B6B'; // Red
+      circleElement.style.stroke = '#FF6B6B';
+    }
+    
+    messageElement.textContent = message;
+    messageElement.style.color = color;
+    scoreElement.style.color = color;
+  }
+}
+
+/**
+ * Animate number value change
+ */
+function animateValue(element, start, end, duration) {
+  const range = end - start;
+  const increment = range / (duration / 16); // 60fps
+  let current = start;
+  
+  const timer = setInterval(() => {
+    current += increment;
+    if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+      current = end;
+      clearInterval(timer);
+    }
+    element.textContent = Math.round(current);
+  }, 16);
+}
+
+/**
+ * Update blocked items statistics
+ */
+function updateBlockedItemsStats(stats) {
+  // Update Cookies Blocked
+  const cookiesEl = document.getElementById('cookiesBlockedStat');
+  if (cookiesEl) {
+    cookiesEl.textContent = formatNumber(stats.cookiesBlocked || 0);
+  }
+  
+  // Update DNS Requests Blocked
+  const dnsEl = document.getElementById('dnsBlockedStat');
+  if (dnsEl) {
+    dnsEl.textContent = formatNumber(stats.dnsRequestsBlocked || 0);
+  }
+  
+  // Update Fingerprinting Blocked
+  const fingerprintEl = document.getElementById('fingerprintBlockedStat');
+  if (fingerprintEl) {
+    fingerprintEl.textContent = formatNumber(stats.fingerprintingBlocked || 0);
+  }
+  
+  // Update Hardware Access Blocked
+  const hardwareEl = document.getElementById('hardwareBlockedStat');
+  if (hardwareEl) {
+    hardwareEl.textContent = formatNumber(stats.hardwareAccessBlocked || 0);
+  }
+  
+  console.log('[Statistics] Blocked items updated:', {
+    cookies: stats.cookiesBlocked,
+    dns: stats.dnsRequestsBlocked,
+    fingerprinting: stats.fingerprintingBlocked,
+    hardware: stats.hardwareAccessBlocked
+  });
+}
+
+/**
+ * Format number with commas for better readability
+ */
+function formatNumber(num) {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/**
+ * Update score breakdown chart with real data
+ */
+function updateScoreBreakdownChart(stats) {
+  const scoreChart = Chart.getChart('scoreChart');
+  if (!scoreChart) return;
+  
+  // Calculate percentages based on actual blocked items
+  const total = 
+    (stats.cookiesBlocked || 0) +
+    (stats.dnsRequestsBlocked || 0) +
+    (stats.fingerprintingBlocked || 0) +
+    (stats.hardwareAccessBlocked || 0);
+  
+  if (total === 0) {
+    // No data yet, show equal distribution
+    scoreChart.data.datasets[0].data = [25, 25, 25, 25];
+  } else {
+    // Calculate percentages
+    const cookiesPercent = ((stats.cookiesBlocked || 0) / total) * 100;
+    const dnsPercent = ((stats.dnsRequestsBlocked || 0) / total) * 100;
+    const fingerprintPercent = ((stats.fingerprintingBlocked || 0) / total) * 100;
+    const hardwarePercent = ((stats.hardwareAccessBlocked || 0) / total) * 100;
+    
+    scoreChart.data.datasets[0].data = [
+      cookiesPercent.toFixed(1),
+      dnsPercent.toFixed(1),
+      fingerprintPercent.toFixed(1),
+      hardwarePercent.toFixed(1)
+    ];
+  }
+  
+  // Update chart with animation
+  scoreChart.update('active');
+  
+  console.log('[Statistics] Score breakdown chart updated');
+}
+
+/**
+ * Get statistics summary for display
+ */
+async function getStatisticsSummary() {
+  try {
+    const stats = await chrome.runtime.sendMessage({ action: 'getStats' });
+    
+    if (stats) {
+      const total = 
+        (stats.cookiesBlocked || 0) +
+        (stats.dnsRequestsBlocked || 0) +
+        (stats.fingerprintingBlocked || 0) +
+        (stats.hardwareAccessBlocked || 0);
+      
+      return {
+        privacyScore: stats.privacyScore || 0,
+        totalBlocked: total,
+        cookiesBlocked: stats.cookiesBlocked || 0,
+        dnsBlocked: stats.dnsRequestsBlocked || 0,
+        fingerprintingBlocked: stats.fingerprintingBlocked || 0,
+        hardwareBlocked: stats.hardwareAccessBlocked || 0,
+        lastUpdated: stats.lastUpdated || Date.now()
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('[Statistics] Error getting summary:', error);
+    return null;
+  }
+}
+
+/**
+ * Export statistics for reporting
+ */
+async function exportStatistics() {
+  try {
+    const summary = await getStatisticsSummary();
+    
+    if (summary) {
+      const statsReport = {
+        timestamp: new Date().toISOString(),
+        privacyScore: summary.privacyScore,
+        blockedItems: {
+          total: summary.totalBlocked,
+          cookies: summary.cookiesBlocked,
+          dns: summary.dnsBlocked,
+          fingerprinting: summary.fingerprintingBlocked,
+          hardware: summary.hardwareBlocked
+        }
+      };
+      
+      // Convert to JSON and download
+      const dataStr = JSON.stringify(statsReport, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `veil-statistics-${Date.now()}.json`;
+      link.click();
+      
+      console.log('[Statistics] Statistics exported successfully');
+    }
+  } catch (error) {
+    console.error('[Statistics] Error exporting statistics:', error);
+  }
+}
+
+/**
+ * Reset all statistics (admin function)
+ */
+async function resetStatistics() {
+  if (confirm('Are you sure you want to reset all statistics? This cannot be undone.')) {
+    try {
+      const response = await chrome.runtime.sendMessage({ action: 'clearStats' });
+      
+      if (response.success) {
+        console.log('[Statistics] Statistics reset successfully');
+        // Reload page to reflect changes
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('[Statistics] Error resetting statistics:', error);
+    }
   }
 }

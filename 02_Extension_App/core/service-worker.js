@@ -4,6 +4,9 @@
 // Import cookie classifier (will be available after script loading)
 importScripts('utils/cookie-classifier.js');
 
+// Import API handlers (using dynamic import for ES modules compatibility)
+// Note: For manifest v3, we'll use the functions directly in service worker
+
 // Initialize Cookie Classifier
 const cookieClassifier = new CookieClassifier('http://localhost:5000');
 
@@ -36,13 +39,24 @@ async function initializeSettings() {
       total: 0,
       by_category: {},
       average_risk_score: 0
-    }
+    },
+    // Hardware access tracking
+    hardwarePermissions: {
+      camera: { blocked: true, count: 0 },
+      microphone: { blocked: true, count: 0 },
+      location: { blocked: true, count: 0 },
+      notifications: { blocked: true, count: 0 }
+    },
+    hardwareActivityLog: []
   };
   
   const stored = await chrome.storage.local.get(Object.keys(defaults));
   const settings = { ...defaults, ...stored };
   
   await chrome.storage.local.set(settings);
+  
+  // Initialize hardware permissions on first install
+  await initializeHardwarePermissions();
 }
 
 // Set up blocking rules using declarativeNetRequest
@@ -398,3 +412,234 @@ setInterval(() => {
   console.log('[CookieClassifier] Running periodic cookie re-classification...');
   classifyAllCookies();
 }, 1800000); // 30 minutes
+
+/**
+ * ============================================
+ * PHASE 3: Hardware Access Control with API Integration
+ * ============================================
+ */
+
+/**
+ * Initialize hardware permissions using API handlers
+ */
+async function initializeHardwarePermissions() {
+  try {
+    const stored = await chrome.storage.local.get('hardwarePermissions');
+    const permissions = stored.hardwarePermissions || {
+      camera: { blocked: true, count: 0 },
+      microphone: { blocked: true, count: 0 },
+      location: { blocked: true, count: 0 },
+      notifications: { blocked: true, count: 0 }
+    };
+
+    // Apply all blocked permissions using native Chrome APIs
+    for (const [type, config] of Object.entries(permissions)) {
+      if (config.blocked) {
+        await applyHardwareBlock(type, true);
+      }
+    }
+
+    console.log('[HardwareControl] Hardware permissions initialized');
+
+  } catch (error) {
+    console.error('[HardwareControl] Error initializing hardware permissions:', error);
+  }
+}
+
+/**
+ * Apply hardware blocking using Chrome ContentSettings API
+ */
+async function applyHardwareBlock(permissionType, shouldBlock) {
+  try {
+    const setting = shouldBlock ? 'block' : 'ask';
+    
+    switch(permissionType) {
+      case 'camera':
+        await chrome.contentSettings.camera.set({
+          primaryPattern: '<all_urls>',
+          setting: setting
+        });
+        console.log(`[HardwareControl] Camera ${shouldBlock ? 'blocked' : 'allowed'}`);
+        break;
+        
+      case 'microphone':
+        await chrome.contentSettings.microphone.set({
+          primaryPattern: '<all_urls>',
+          setting: setting
+        });
+        console.log(`[HardwareControl] Microphone ${shouldBlock ? 'blocked' : 'allowed'}`);
+        break;
+        
+      case 'location':
+        await chrome.contentSettings.location.set({
+          primaryPattern: '<all_urls>',
+          setting: setting
+        });
+        console.log(`[HardwareControl] Location ${shouldBlock ? 'blocked' : 'allowed'}`);
+        break;
+        
+      case 'notifications':
+        await chrome.contentSettings.notifications.set({
+          primaryPattern: '<all_urls>',
+          setting: setting
+        });
+        console.log(`[HardwareControl] Notifications ${shouldBlock ? 'blocked' : 'allowed'}`);
+        break;
+    }
+
+    return { success: true };
+
+  } catch (error) {
+    console.error(`[HardwareControl] Error applying ${permissionType} block:`, error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Toggle hardware permission and update storage
+ */
+async function toggleHardwarePermission(permissionType, shouldBlock) {
+  try {
+    // Apply the blocking using Chrome API
+    const result = await applyHardwareBlock(permissionType, shouldBlock);
+    
+    if (!result.success) {
+      return result;
+    }
+
+    // Update storage
+    const stored = await chrome.storage.local.get('hardwarePermissions');
+    const permissions = stored.hardwarePermissions || {};
+
+    if (permissions[permissionType]) {
+      permissions[permissionType].blocked = shouldBlock;
+    }
+
+    await chrome.storage.local.set({ hardwarePermissions: permissions });
+
+    // Log the action
+    await logHardwareAccess(permissionType, '<all_urls>', shouldBlock ? 'blocked' : 'allowed');
+
+    console.log(`[HardwareControl] ${permissionType} toggled to ${shouldBlock ? 'blocked' : 'allowed'}`);
+
+    return { success: true };
+
+  } catch (error) {
+    console.error(`[HardwareControl] Error toggling ${permissionType}:`, error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Log hardware access attempts
+ */
+async function logHardwareAccess(permissionType, url, action) {
+  try {
+    const stored = await chrome.storage.local.get(['hardwareActivityLog', 'hardwarePermissions']);
+    const log = stored.hardwareActivityLog || [];
+    const permissions = stored.hardwarePermissions || {
+      camera: { blocked: true, count: 0 },
+      microphone: { blocked: true, count: 0 },
+      location: { blocked: true, count: 0 },
+      notifications: { blocked: true, count: 0 }
+    };
+
+    // Add to activity log
+    log.unshift({
+      type: permissionType,
+      url: url,
+      action: action,
+      timestamp: Date.now()
+    });
+
+    // Keep only last 50 entries
+    if (log.length > 50) {
+      log.pop();
+    }
+
+    // Update permission counter if blocked
+    if (action === 'blocked' && permissions[permissionType]) {
+      permissions[permissionType].count++;
+    }
+
+    // Update hardware access blocked counter
+    let hardwareAccessBlocked = 0;
+    Object.values(permissions).forEach(perm => {
+      hardwareAccessBlocked += perm.count;
+    });
+
+    await chrome.storage.local.set({
+      hardwareActivityLog: log,
+      hardwarePermissions: permissions,
+      hardwareAccessBlocked: hardwareAccessBlocked
+    });
+
+    // Update privacy score
+    calculatePrivacyScore();
+
+    console.log(`[HardwareControl] Logged: ${permissionType} ${action} for ${url}`);
+
+  } catch (error) {
+    console.error('[HardwareControl] Error logging hardware access:', error);
+  }
+}
+
+/**
+ * Monitor content settings changes and log requests
+ */
+chrome.contentSettings.camera.onChange.addListener((details) => {
+  if (details.setting === 'ask') {
+    logHardwareAccess('camera', details.primaryPattern, 'requested');
+  }
+});
+
+chrome.contentSettings.microphone.onChange.addListener((details) => {
+  if (details.setting === 'ask') {
+    logHardwareAccess('microphone', details.primaryPattern, 'requested');
+  }
+});
+
+chrome.contentSettings.location.onChange.addListener((details) => {
+  if (details.setting === 'ask') {
+    logHardwareAccess('location', details.primaryPattern, 'requested');
+  }
+});
+
+chrome.contentSettings.notifications.onChange.addListener((details) => {
+  if (details.setting === 'ask') {
+    logHardwareAccess('notifications', details.primaryPattern, 'requested');
+  }
+});
+
+/**
+ * Message handlers for hardware control
+ */
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Hardware permission toggle
+  if (request.action === 'toggleHardwarePermission') {
+    toggleHardwarePermission(request.permissionType, request.shouldBlock).then(result => {
+      sendResponse(result);
+    });
+    return true;
+  }
+
+  // Get hardware statistics
+  if (request.action === 'getHardwareStats') {
+    chrome.storage.local.get(['hardwarePermissions', 'hardwareActivityLog'], (data) => {
+      sendResponse({
+        permissions: data.hardwarePermissions || {},
+        activityLog: data.hardwareActivityLog || []
+      });
+    });
+    return true;
+  }
+
+  // Clear hardware activity log
+  if (request.action === 'clearHardwareLog') {
+    chrome.storage.local.set({ hardwareActivityLog: [] }).then(() => {
+      sendResponse({ success: true });
+    });
+    return true;
+  }
+});
+

@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initializeScrollNavigation();
   initializeCookieManagement(); // ✅ NEW: Initialize cookie feature
   initializeTimeframeToggle(); // ✅ NEW: Initialize timeframe toggle
+  initializeHardwareControls(); // ✅ PHASE 3: Initialize hardware controls
 });
 
 function initializeCharts() {
@@ -916,5 +917,273 @@ function hideChartNotice() {
   const noticeElement = document.getElementById('trackingChartNotice');
   if (noticeElement) {
     noticeElement.classList.add('hidden');
+  }
+}
+
+/**
+ * ============================================
+ * PHASE 3: Hardware Access Control Functions
+ * ============================================
+ */
+
+/**
+ * Initialize hardware controls
+ */
+function initializeHardwareControls() {
+  console.log('[HardwareControls] Initializing...');
+  
+  // Load hardware statistics
+  loadHardwareStats();
+  
+  // Set up toggle event listeners
+  setupHardwareToggles();
+  
+  // Set up clear log button
+  const clearLogBtn = document.getElementById('clearHardwareLog');
+  if (clearLogBtn) {
+    clearLogBtn.addEventListener('click', clearHardwareLog);
+  }
+  
+  // Refresh stats every 5 seconds
+  setInterval(loadHardwareStats, 5000);
+}
+
+/**
+ * Load hardware statistics from storage via service worker
+ */
+async function loadHardwareStats() {
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'getHardwareStats' });
+    
+    if (response) {
+      updateHardwareCounters(response.permissions);
+      updateHardwareActivityLog(response.activityLog);
+      updateHardwareToggles(response.permissions);
+    }
+  } catch (error) {
+    console.error('[HardwareControls] Error loading stats:', error);
+  }
+}
+
+/**
+ * Update hardware counters display
+ */
+function updateHardwareCounters(permissions) {
+  if (!permissions) return;
+  
+  const counters = {
+    camera: document.getElementById('cameraBlockedCount'),
+    microphone: document.getElementById('microphoneBlockedCount'),
+    location: document.getElementById('locationBlockedCount'),
+    notifications: document.getElementById('notificationsBlockedCount')
+  };
+  
+  Object.entries(counters).forEach(([type, element]) => {
+    if (element && permissions[type]) {
+      const newCount = permissions[type].count || 0;
+      if (element.textContent !== newCount.toString()) {
+        element.textContent = newCount;
+        // Add pulse animation
+        element.classList.add('updated');
+        setTimeout(() => element.classList.remove('updated'), 500);
+      }
+    }
+  });
+}
+
+/**
+ * Update hardware activity log display
+ */
+function updateHardwareActivityLog(activityLog) {
+  const logContainer = document.getElementById('hardwareActivityLog');
+  if (!logContainer) return;
+  
+  if (!activityLog || activityLog.length === 0) {
+    logContainer.innerHTML = `
+      <div class="text-center py-8 text-white/50">
+        <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <p>No recent permission requests</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Generate activity items HTML
+  const activityHTML = activityLog.slice(0, 10).map(item => {
+    const icon = getHardwareIcon(item.type);
+    const color = getHardwareColor(item.type);
+    const timeAgo = getTimeAgo(item.timestamp);
+    const actionBadge = item.action === 'blocked' 
+      ? '<span class="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs">Blocked</span>'
+      : '<span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">Allowed</span>';
+    
+    return `
+      <div class="flex items-start gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
+        <div class="w-10 h-10 ${color} rounded-lg flex items-center justify-center flex-shrink-0">
+          ${icon}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-1">
+            <h4 class="text-white font-medium truncate">${formatUrl(item.url)}</h4>
+            ${actionBadge}
+          </div>
+          <p class="text-xs text-white/60">Requested ${item.type} access</p>
+          <p class="text-xs text-white/40 mt-1">${timeAgo}</p>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  logContainer.innerHTML = activityHTML;
+}
+
+/**
+ * Get SVG icon for hardware type
+ */
+function getHardwareIcon(type) {
+  const icons = {
+    camera: '<svg class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/></svg>',
+    microphone: '<svg class="w-6 h-6 text-purple-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/></svg>',
+    location: '<svg class="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>',
+    notifications: '<svg class="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/></svg>'
+  };
+  return icons[type] || icons.camera;
+}
+
+/**
+ * Get color class for hardware type
+ */
+function getHardwareColor(type) {
+  const colors = {
+    camera: 'bg-blue-500/20',
+    microphone: 'bg-purple-500/20',
+    location: 'bg-green-500/20',
+    notifications: 'bg-yellow-500/20'
+  };
+  return colors[type] || colors.camera;
+}
+
+/**
+ * Format URL for display
+ */
+function formatUrl(url) {
+  if (!url) return 'Unknown';
+  if (url === '<all_urls>') return 'All Websites';
+  
+  try {
+    const urlObj = new URL(url.replace('*://', 'https://'));
+    return urlObj.hostname;
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * Get time ago string
+ */
+function getTimeAgo(timestamp) {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  
+  if (seconds < 60) return 'Just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+  return `${Math.floor(seconds / 86400)} days ago`;
+}
+
+/**
+ * Setup hardware toggle event listeners
+ */
+function setupHardwareToggles() {
+  const toggles = {
+    camera: document.getElementById('cameraToggle'),
+    microphone: document.getElementById('microphoneToggle'),
+    location: document.getElementById('locationToggle'),
+    notifications: document.getElementById('notificationsToggle')
+  };
+  
+  Object.entries(toggles).forEach(([type, element]) => {
+    if (element) {
+      element.addEventListener('change', (e) => {
+        handleHardwareToggle(type, e.target.checked);
+      });
+    }
+  });
+}
+
+/**
+ * Update toggle states from permissions data
+ */
+function updateHardwareToggles(permissions) {
+  if (!permissions) return;
+  
+  const toggles = {
+    camera: document.getElementById('cameraToggle'),
+    microphone: document.getElementById('microphoneToggle'),
+    location: document.getElementById('locationToggle'),
+    notifications: document.getElementById('notificationsToggle')
+  };
+  
+  Object.entries(toggles).forEach(([type, element]) => {
+    if (element && permissions[type]) {
+      // Only update if different to avoid triggering change event
+      if (element.checked !== permissions[type].blocked) {
+        element.checked = permissions[type].blocked;
+      }
+    }
+  });
+}
+
+/**
+ * Handle hardware permission toggle
+ */
+async function handleHardwareToggle(permissionType, shouldBlock) {
+  try {
+    console.log(`[HardwareControls] Toggling ${permissionType} to ${shouldBlock ? 'blocked' : 'allowed'}`);
+    
+    const response = await chrome.runtime.sendMessage({
+      action: 'toggleHardwarePermission',
+      permissionType: permissionType,
+      shouldBlock: shouldBlock
+    });
+    
+    if (response.success) {
+      console.log(`[HardwareControls] Successfully toggled ${permissionType}`);
+      
+      // Reload stats after a short delay to reflect changes
+      setTimeout(loadHardwareStats, 500);
+    } else {
+      console.error(`[HardwareControls] Failed to toggle ${permissionType}:`, response.error);
+      // Revert toggle on error
+      const toggle = document.getElementById(`${permissionType}Toggle`);
+      if (toggle) {
+        toggle.checked = !shouldBlock;
+      }
+    }
+  } catch (error) {
+    console.error('[HardwareControls] Error toggling permission:', error);
+    // Revert toggle on error
+    const toggle = document.getElementById(`${permissionType}Toggle`);
+    if (toggle) {
+      toggle.checked = !shouldBlock;
+    }
+  }
+}
+
+/**
+ * Clear hardware activity log
+ */
+async function clearHardwareLog() {
+  try {
+    const response = await chrome.runtime.sendMessage({ action: 'clearHardwareLog' });
+    
+    if (response.success) {
+      console.log('[HardwareControls] Activity log cleared');
+      // Reload stats immediately
+      loadHardwareStats();
+    }
+  } catch (error) {
+    console.error('[HardwareControls] Error clearing log:', error);
   }
 }

@@ -5,52 +5,63 @@
 Veil is an advanced privacy protection browser extension that uses AI-powered tracker detection to safeguard user privacy while browsing the web.
 
 ## 📁 Project Structure
+## 📁 Root Directory
 
 ```
-Veil-FYP-Project/
-├── 01_Docs/                    # Project documentation
-│   ├── Proposal.docx           # Initial project proposal
-│   ├── SRS.docx                # Software Requirements Specification
-│   ├── Design.docx             # Detailed architecture and UI/UX
-│   └── Presentation/           # Presentation materials
+FYP-Veil-New/
+├── 01_Docs/                          # Documentation
+├── 02_Extension_App/                 # Chrome Extension (Main Application)
+├── 03_AI_ML_Pipeline/                # AI/ML Backend Services
+├── 04_Testing/                       # Testing Suite
+├── .gitignore                        # Git ignore rules
+├── README.md                         # Project overview
+├── requirements.txt                  # Python dependencies
+├── start-api.ps1                     # PowerShell script to start API server
+└── [Documentation Files]             # Various implementation guides
+```
+
+---
+
+## 📂 Detailed Structure
+
+```
+01_Docs/
+└── README.md                         # Documentation index
+```
+                                      *Purpose:* Central documentation repository for project guides, implementation details, and developer references.
+```
+02_Extension_App/
+├── manifest.json                     # Chrome Extension Manifest V3 configuration
+├── README.md                         # Extension documentation
+├── test-console.js                   # Console testing utilities
+├── test-cookies.html                 # Cookie testing page
+├── TEST-GUIDE.md                     # Testing instructions
+├── TESTING.md                        # Testing documentation
 │
-├── 02_Extension_App/           # Core Browser Extension
-│   ├── manifest.json           # Extension configuration
-│   ├── frontend/               # UI/Views
-│   │   ├── assets/             # Images, icons, fonts
-│   │   ├── pages/
-│   │   │   ├── dashboard.html  # Main dashboard
-│   │   │   └── popup.html      # Quick-access popup
-│   │   ├── scripts/
-│   │   │   ├── dashboard.js    # Dashboard logic
-│   │   │   └── popup.js        # Popup logic
-│   │   ├── styles/
-│   │   │   ├── dashboard.css
-│   │   │   └── popup.css
-│   │   └── index.html          # Main entry point
-│   │
-│   └── core/                   # Extension Logic
-│       ├── service-worker.js   # Background script
-│       ├── api-handlers.js     # Chrome API wrappers
-│       └── utils/
-│           └── blocklist-manager.js  # Blocklist management
+├── core/                             # Background Scripts & Core Logic
+│   ├── service-worker.js             # Main service worker (background script)
+│   ├── api-handlers.js               # API communication handlers
+│   └── utils/                        # Utility modules
+│       ├── blocklist-manager.js      # Domain/tracker blocklist management
+│       └── cookie-classifier.js      # Cookie classification client
 │
-├── 03_AI_ML_Pipeline/          # Python/TensorFlow Components
-│   ├── model_training/
-│   │   ├── tracker_detection_model.py  # ML model
-│   │   ├── datasets/                   # Training data
-│   │   └── notebooks/                  # Jupyter notebooks
-│   │
-│   └── deployment/
-│       ├── tfjs_converter/             # TensorFlow.js tools
-│       └── dynamic_rules_generator.py  # Dynamic rule generation
-│
-├── 04_Testing/
-│   ├── unit_tests/             # Unit tests
-│   ├── integration_tests/      # Integration tests
-│   └── performance_benchmarks/ # Performance tests
-│
-└── requirements.txt            # Python dependencies
+└── frontend/                         # User Interface
+    ├── pages/                        # HTML Pages
+    │   ├── dashboard.html            # Main dashboard page
+    │   └── popup.html                # Extension popup interface
+    │
+    ├── scripts/                      # JavaScript for UI
+    │   ├── dashboard.js              # Dashboard functionality & charts
+    │   ├── popup.js                  # Popup interface logic
+    │   └── cookieManager.js          # Cookie management utilities
+    │
+    ├── styles/                       # CSS Stylesheets
+    │   ├── dashboard.css             # Dashboard styling
+    │   └── popup.css                 # Popup styling
+    │
+    └── assets/                       # Static assets (images, icons, fonts)
+```
+
 ```
 
 ## 🚀 Features

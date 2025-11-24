@@ -1,0 +1,25 @@
+# Python Dependencies for Veil Cookie Classification API
+
+# Web Framework
+flask==3.0.0
+flask-cors==4.0.0
+
+# Hugging Face Integration
+huggingface-hub==0.36.0
+transformers==4.57.1
+
+# Data Processing
+numpy==2.3.2
+
+# HTTP Requests
+requests==2.32.5
+
+# Logging (built-in, but good to specify version)
+# Python logging is built-in
+
+# Optional: For production deployment
+gunicorn==21.2.0
+
+# Optional: For model inference optimization
+# torch==2.1.0  # Uncomment if using PyTorch models
+# tensorflow==2.15.0  # Uncomment if using TensorFlow models

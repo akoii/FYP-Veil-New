@@ -1,0 +1,29 @@
+/* Popup Page Styles */
+
+:root {
+  --score: 0;                          /* start from 0 for animation */
+  --circumference: 282.743338823;      /* 2πr for r=45 */
+  --ring-color: #FF4444;              /* start with red */
+}
+
+.progress-ring__circle {
+  stroke-dasharray: var(--circumference);
+  stroke-dashoffset: calc(var(--circumference) - (var(--circumference) * var(--score)) / 100);
+  transition: stroke-dashoffset 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+              stroke 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+              opacity .25s ease;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  will-change: stroke-dashoffset, stroke;
+  stroke: var(--ring-color);
+}
+
+#scoreValue {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+#scoreMessage {
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+}

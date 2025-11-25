@@ -1,0 +1,85 @@
+{
+  "manifest_version": 3,
+  "name": "Veil - Privacy & Cookie Classifier",
+  "version": "1.0.0",
+  "description": "AI-powered cookie classification using serverless Hugging Face API. Automatically classifies cookies on any website into privacy categories.",
+  "author": "FYP Team",
+  
+  "permissions": [
+    "cookies",
+    "storage",
+    "tabs",
+    "activeTab",
+    "scripting",
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback",
+    "sidePanel"
+  ],
+  
+  "host_permissions": [
+    "<all_urls>",
+    "https://aqibtahir-cookie-classifier-api.hf.space/*"
+  ],
+  
+  "background": {
+    "service_worker": "core/service-worker.js"
+  },
+  
+  "action": {
+    "default_popup": "frontend/pages/popup.html",
+    "default_icon": {
+      "16": "frontend/assets/icon16.svg",
+      "48": "frontend/assets/icon48.svg",
+      "128": "frontend/assets/icon128.svg"
+    },
+    "default_title": "Veil - Cookie Classifier"
+  },
+  
+  "side_panel": {
+    "default_path": "frontend/pages/dashboard.html"
+  },
+  
+  "icons": {
+    "16": "frontend/assets/icon16.svg",
+    "48": "frontend/assets/icon48.svg",
+    "128": "frontend/assets/icon128.svg"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "frontend/scripts/cookieClassifier.js",
+        "frontend/scripts/cookieManager.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "frontend/scripts/*.js",
+        "frontend/styles/*.css",
+        "frontend/styles/dashboard.css",
+        "frontend/assets/*",
+        "frontend/pages/*.html"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "tracker_blocking",
+        "enabled": true,
+        "path": "core/rules/tracker_rules.json"
+      }
+    ]
+  },
+  
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; object-src 'self'"
+  }
+}

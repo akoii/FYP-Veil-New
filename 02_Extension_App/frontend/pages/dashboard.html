@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Veil - Dashboard</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Link to external CSS -->
+  <link rel="stylesheet" href="../styles/dashboard.css">
+  
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f1235 0%, #1a1d3f 25%, #0a0c20 75%, #050610 100%);
+      background-attachment: fixed;
+      background-size: cover;
+    }
+  </style>
+</head>
+
+<body class="text-white min-h-screen">
+  <div class="flex h-screen">
+    
+    <!-- Sidebar -->
+    <div class="w-64 flex flex-col shadow-2xl border-r border-white/5" style="background: rgba(10, 12, 32, 0.4); backdrop-filter: blur(10px);">
+      <!-- Logo -->
+      <div class="p-6 border-b border-white/10">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 flex items-center justify-center bg-primary rounded-lg">
+            <span class="text-secondary font-bold text-sm">V</span>
+          </div>
+          <span class="text-xl font-bold text-white">Veil</span>
+        </div>
+      </div>
+      
+      <!-- Navigation -->
+      <nav class="flex-1 p-4">
+        <ul class="space-y-2">
+          <li>
+            <a href="#dashboard-section" onclick="scrollToSection('dashboard-section')" class="sidebar-item active flex items-center gap-3 p-3 rounded-lg text-sm font-medium" data-section="dashboard-section">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
+              </svg>
+              Dashboard
+            </a>
+          </li>
+        </ul>
+        
+        <div class="mt-6">
+          <p class="text-xs font-medium text-white/40 uppercase tracking-wider mb-3">Tools</p>
+          <ul class="space-y-2">
+            <li>
+              <a href="#cookies-section" onclick="scrollToSection('cookies-section')" class="sidebar-item flex items-center gap-3 p-3 rounded-lg text-sm font-medium text-white/70 hover:text-white" data-section="cookies-section">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path>
+                </svg>
+                Cookies
+              </a>
+            </li>
+            <li>
+              <a href="#dns-section" onclick="scrollToSection('dns-section')" class="sidebar-item flex items-center gap-3 p-3 rounded-lg text-sm font-medium text-white/70 hover:text-white" data-section="dns-section">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"></path>
+                </svg>
+                DNS
+              </a>
+            </li>
+            <li>
+              <a href="#fingerprinting-section" onclick="scrollToSection('fingerprinting-section')" class="sidebar-item flex items-center gap-3 p-3 rounded-lg text-sm font-medium text-white/70 hover:text-white" data-section="fingerprinting-section">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M6.672 1.911a1 1 0 10-1.932.518l.259.966a1 1 0 001.932-.518l-.26-.966zM2.429 4.74a1 1 0 10-.517 1.932l.966.259a1 1 0 00.517-1.932l-.966-.26zm8.814-.569a1 1 0 00-1.415-1.414l-.707.707a1 1 0 101.415 1.414l.707-.707zm-7.071 7.072l.707-.707A1 1 0 003.465 9.12l-.708.707a1 1 0 001.415 1.415zm3.2-5.171a1 1 0 00-1.3 1.3l4 10a1 1 0 001.823.075l1.38-2.759 3.018 3.02a1 1 0 001.414-1.415l-3.019-3.02 2.76-1.379a1 1 0 00-.076-1.822l-10-4z"></path>
+                </svg>
+                Fingerprinting
+              </a>
+            </li>
+            <li>
+              <a href="#hardware-section" onclick="scrollToSection('hardware-section')" class="sidebar-item flex items-center gap-3 p-3 rounded-lg text-sm font-medium text-white/70 hover:text-white" data-section="hardware-section">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path>
+                </svg>
+                Hardware Access
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+      
+      <!-- Premium Subscription -->
+      <div class="p-4 border-t border-white/10">
+        <div class="bg-gradient-to-br from-secondary to-[#10133a] border border-white/10 rounded-lg p-4">
+          <p class="text-sm font-medium text-white mb-2">Subscribe to</p>
+          <p class="text-sm font-bold text-primary mb-2">Veil premium</p>
+          <p class="text-xs text-white/60 mb-3">to go completely private !</p>
+          <button class="w-full bg-primary text-secondary rounded-lg py-2 px-3 text-sm font-semibold hover:bg-[#dffb2f] transition-colors">
+            Upgrade
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      
+      <!-- Header -->
+      <header class="bg-secondary/30 border-b border-white/10 p-6 backdrop-blur-sm">
+        <div class="flex justify-between items-center">
+          <h1 class="text-2xl font-bold text-white">Dashboard</h1>
+          <div class="flex items-center gap-4">
+            <button onclick="window.location.href='../index.html'" class="px-4 py-2 bg-white/10 rounded-lg text-sm text-white/70 hover:bg-white/20 transition-colors">
+              ← Back
+            </button>
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                <span class="text-sm font-medium">A</span>
+              </div>
+              <span class="text-sm text-white/70">Asjad</span>
+            </div>
+          </div>
+        </div>
+      </header>
+      
+      <!-- Dashboard Content -->
+      <main class="flex-1 overflow-auto p-6" id="main-content">
+        
+        <!-- Dashboard Section -->
+        <section id="dashboard-section" class="min-h-screen">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+            
+            <!-- Left Column -->
+            <div class="lg:col-span-1 space-y-6">
+              
+              <!-- Privacy Score -->
+              <div class="card rounded-2xl p-6 fade-in">
+                <h3 class="text-lg font-semibold mb-4 text-white">Privacy Score</h3>
+                <div class="flex flex-col items-center">
+                  <div class="relative w-32 h-32 mb-4">
+                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#EBFF3D" stroke-width="8" 
+                              id="privacyScoreCircle" class="progress-ring__circle" stroke-linecap="round"/>
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                      <span id="privacyScoreValue" class="text-4xl font-bold text-primary">0</span>
+                    </div>
+                  </div>
+                  <p id="privacyScoreMessage" class="text-sm text-white/60 text-center">Loading...</p>
+                </div>
+              </div>
+              
+              <!-- Score Breakdown -->
+              <div class="card rounded-2xl p-6 fade-in stagger-1">
+                <h3 class="text-lg font-semibold mb-4 text-white">Score Breakdown</h3>
+                <div class="chart-container">
+                  <canvas id="scoreChart"></canvas>
+                </div>
+              </div>
+              
+            </div>
+            
+            <!-- Right Column -->
+            <div class="lg:col-span-2 space-y-6">
+              
+              <!-- Blocked Items -->
+              <div class="fade-in stagger-2">
+                <h3 class="text-lg font-semibold mb-4 text-white">Blocked Items</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  
+                  <div class="card rounded-xl p-4">
+                    <h4 class="text-sm font-medium text-white/70 mb-1">Cookies</h4>
+                    <p id="cookiesBlockedStat" class="text-2xl font-bold text-white mb-1">0</p>
+                    <p class="text-xs text-green-400">Real-time tracking</p>
+                  </div>
+                  
+                  <div class="card rounded-xl p-4">
+                    <h4 class="text-sm font-medium text-white/70 mb-1">DNS Requests</h4>
+                    <p id="dnsBlockedStat" class="text-2xl font-bold text-white mb-1">0</p>
+                    <p class="text-xs text-green-400">Real-time tracking</p>
+                  </div>
+                  
+                  <div class="card rounded-xl p-4">
+                    <h4 class="text-sm font-medium text-white/70 mb-1">Browser Fingerprint</h4>
+                    <p id="fingerprintBlockedStat" class="text-2xl font-bold text-white mb-1">0</p>
+                    <p class="text-xs text-green-400">Real-time tracking</p>
+                  </div>
+                  
+                  <div class="card rounded-xl p-4">
+                    <h4 class="text-sm font-medium text-white/70 mb-1">Hardware Access</h4>
+                    <p id="hardwareBlockedStat" class="text-2xl font-bold text-white mb-1">0</p>
+                    <p class="text-xs text-green-400">Real-time tracking</p>
+                  </div>
+                  
+                </div>
+              </div>
+              
+              <!-- Tracking History -->
+              <div class="card rounded-2xl p-6 fade-in stagger-3">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
+                  <div>
+                    <h3 class="text-lg font-semibold text-white">Tracking History</h3>
+                    <p id="trackingDateRange" class="text-xs text-white/50 mt-1">Loading...</p>
+                  </div>
+                  <button class="text-white/40 hover:text-white hidden sm:block">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
+                    </svg>
+                  </button>
+                </div>
+                
+                <!-- Timeframe Toggle -->
+                <div class="mb-6">
+                  <div role="tablist" aria-label="Select timeframe for tracking history" class="timeframe-toggle inline-flex rounded-lg bg-white/5 p-1">
+                    <div class="timeframe-slider" aria-hidden="true"></div>
+                    <button 
+                      role="tab" 
+                      type="button"
+                      aria-label="Show last 7 days"
+                      aria-pressed="false"
+                      data-timeframe="7d"
+                      class="timeframe-btn px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-secondary/30"
+                    >
+                      7D
+                    </button>
+                    <button 
+                      role="tab" 
+                      type="button"
+                      aria-label="Show last 30 days"
+                      aria-pressed="true"
+                      data-timeframe="30d"
+                      class="timeframe-btn px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-secondary/30 active"
+                    >
+                      30D
+                    </button>
+                    <button 
+                      role="tab" 
+                      type="button"
+                      aria-label="Show last 3 months"
+                      aria-pressed="false"
+                      data-timeframe="3m"
+                      class="timeframe-btn px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-secondary/30"
+                    >
+                      3M
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Chart Container with Loading/Error States -->
+                <div class="relative">
+                  <div id="trackingChartLoading" class="absolute inset-0 bg-secondary/50 backdrop-blur-sm rounded-lg flex items-center justify-center hidden z-10">
+                    <div class="flex flex-col items-center gap-2">
+                      <div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      <span class="text-sm text-white/70">Loading data...</span>
+                    </div>
+                  </div>
+                  
+                  <div id="trackingChartError" class="absolute inset-0 bg-secondary/50 backdrop-blur-sm rounded-lg flex items-center justify-center hidden z-10">
+                    <div class="flex flex-col items-center gap-2 text-center px-4">
+                      <svg class="w-12 h-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      <span class="text-sm text-white/70" id="trackingChartErrorMessage">Failed to load data</span>
+                    </div>
+                  </div>
+                  
+                  <div id="trackingChartNotice" class="mb-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg hidden">
+                    <p class="text-xs text-yellow-200" id="trackingChartNoticeMessage"></p>
+                  </div>
+                  
+                  <div class="chart-container">
+                    <canvas id="trackingChart"></canvas>
+                  </div>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        </section>
+
+        <!-- Cookies Section -->
+        <section id="cookies-section" class="min-h-screen pt-12">
+          <div class="mb-8">
+            <h2 class="text-3xl font-bold text-white mb-2">Cookies</h2>
+            <p class="text-white/60">Manage and view detailed information about blocked cookies</p>
+          </div>
+
+          <!-- Total Cookies Blocked Card -->
+          <div class="mb-8">
+            <div class="card rounded-2xl p-8 max-w-md">
+              <h3 class="text-lg font-medium text-white/70 mb-2">Total Cookies Blocked</h3>
+              <p class="text-5xl font-bold text-white mb-3">126,332</p>
+              <p class="text-sm text-green-400">+6.5% Since last week</p>
+            </div>
+          </div>
+
+          <!-- Cookie Categories Container -->
+          <div class="space-y-6">
+            
+            <!-- Ad Cookies Sub-Container -->
+            <div class="card rounded-2xl p-6 border-l-4 border-red-500">
+              <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                      <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 class="text-xl font-semibold text-white">Advertising Cookies</h3>
+                    <p class="text-sm text-red-400">Client-side cookies detected</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="text-2xl font-bold text-white" id="adCookiesCount">0</p>
+                  <p class="text-xs text-white/60">Total Found</p>
+                </div>
+              </div>
+
+              <!-- Cookie Controls -->
+              <div class="mb-4 space-y-3">
+                <div class="flex flex-wrap gap-3 items-center">
+                  <!-- View Toggle -->
+                  <label class="flex items-center gap-2 text-sm text-white/70 cursor-pointer hover:text-white">
+                    <input type="checkbox" id="cookieViewToggle" class="w-4 h-4 rounded border-white/30 bg-white/10 text-primary focus:ring-primary focus:ring-offset-0">
+                    <span>Active Tab Only</span>
+                  </label>
+                  
+                  <!-- Search Input -->
+                  <input 
+                    type="text" 
+                    id="cookieSearchInput" 
+                    placeholder="Search by name or domain..." 
+                    class="flex-1 min-w-[200px] px-4 py-2 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm"
+                  >
+                  
+                  <!-- Refresh Button -->
+                  <button 
+                    id="refreshCookiesBtn" 
+                    class="px-4 py-2 bg-primary text-secondary font-medium rounded-lg hover:bg-primary/90 transition-colors text-sm flex items-center gap-2"
+                  >
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+                    </svg>
+                    Refresh
+                  </button>
+                </div>
+              </div>
+
+              <!-- Ad Cookie Entries Container (JavaScript will populate this) -->
+              <div id="adCookiesContainer" class="space-y-3">
+                <!-- Loading/Empty/Error states and cookie cards will be inserted here by dashboard.js -->
+              </div>
+            </div>
+
+            <!-- Functional Cookies Sub-Container -->
+            <div class="card rounded-2xl p-6 border-l-4 border-yellow-500">
+              <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 class="text-xl font-semibold text-white">Functional Cookies</h3>
+                    <p class="text-sm text-yellow-400">Analytics and performance tracking</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="text-2xl font-bold text-white">3,687</p>
+                  <p class="text-xs text-white/60">Total Blocked</p>
+                </div>
+              </div>
+
+              <!-- Functional Cookie Entries -->
+              <div class="space-y-3">
+                <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 hover:bg-yellow-500/15 transition-colors">
+                  <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                      <h4 class="text-white font-medium mb-1">google-analytics.com</h4>
+                      <p class="text-white/60 text-sm mb-2">Tracking cookie for analytics and user behavior</p>
+                      <div class="flex gap-4 text-xs text-white/50">
+                        <span>Blocked: 2,453 times</span>
+                        <span>Last seen: 2 minutes ago</span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs">Blocked</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 hover:bg-yellow-500/15 transition-colors">
+                  <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                      <h4 class="text-white font-medium mb-1">cdn.example.com</h4>
+                      <p class="text-white/60 text-sm mb-2">Content delivery and performance optimization</p>
+                      <div class="flex gap-4 text-xs text-white/50">
+                        <span>Blocked: 1,234 times</span>
+                        <span>Last seen: 4 minutes ago</span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs">Blocked</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Strictly Necessary Cookies Sub-Container -->
+            <div class="card rounded-2xl p-6 border-l-4 border-green-500">
+              <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 class="text-xl font-semibold text-white">Strictly Necessary Cookies</h3>
+                    <p class="text-sm text-green-400">Essential for website functionality</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="text-2xl font-bold text-white">2,459</p>
+                  <p class="text-xs text-white/60">Active</p>
+                </div>
+              </div>
+
+              <!-- Strictly Necessary Cookie Entries -->
+              <div class="space-y-3">
+                <div class="bg-green-500/10 border border-green-500/30 rounded-xl p-4 hover:bg-green-500/15 transition-colors">
+                  <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                      <h4 class="text-white font-medium mb-1">sessionid.example.com</h4>
+                      <p class="text-white/60 text-sm mb-2">Essential session management cookie</p>
+                      <div class="flex gap-4 text-xs text-white/50">
+                        <span>Active: 892 times</span>
+                        <span>Last seen: Just now</span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">Allowed</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-green-500/10 border border-green-500/30 rounded-xl p-4 hover:bg-green-500/15 transition-colors">
+                  <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                      <h4 class="text-white font-medium mb-1">csrf-token.example.com</h4>
+                      <p class="text-white/60 text-sm mb-2">Security token for form submissions</p>
+                      <div class="flex gap-4 text-xs text-white/50">
+                        <span>Active: 1,567 times</span>
+                        <span>Last seen: Just now</span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">Allowed</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- DNS Section -->
+        <section id="dns-section" class="min-h-screen pt-12">
+          <div class="mb-8">
+            <h2 class="text-3xl font-bold text-white mb-2">DNS Requests</h2>
+            <p class="text-white/60">Monitor and control DNS requests to prevent tracking</p>
+          </div>
+
+          <!-- Total DNS Blocked Card -->
+          <div class="mb-8">
+            <div class="card rounded-2xl p-8 max-w-md">
+              <h3 class="text-lg font-medium text-white/70 mb-2">Total DNS Requests Blocked</h3>
+              <p id="totalDnsBlocked" class="text-5xl font-bold text-white mb-3">0</p>
+              <p class="text-sm text-green-400">Real-time tracking</p>
+            </div>
+          </div>
+
+          <!-- DNS Controls -->
+          <div class="card rounded-2xl p-6 mb-6">
+            <h3 class="text-xl font-semibold text-white mb-4">DNS Protection</h3>
+            <p class="text-white/60 text-sm mb-4">Block tracking domains and prevent DNS leaks</p>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h4 class="text-white font-medium">Block Tracking Domains</h4>
+                  <p class="text-white/60 text-sm">Prevent requests to known tracking domains</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="dnsBlockingToggle" class="sr-only peer" checked>
+                  <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- DNS Activity Log -->
+          <div class="card rounded-2xl p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold text-white">Recent DNS Activity</h3>
+              <button id="clearDnsLog" class="text-sm text-white/60 hover:text-white transition-colors">Clear Log</button>
+            </div>
+            <div id="dnsActivityLog" class="space-y-3 max-h-96 overflow-y-auto">
+              <div class="flex items-center justify-center py-8">
+                <p class="text-white/60">No DNS activity logged yet</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Fingerprinting Section -->
+        <section id="fingerprinting-section" class="min-h-screen pt-12">
+          <div class="mb-8">
+            <h2 class="text-3xl font-bold text-white mb-2">Fingerprinting Protection</h2>
+            <p class="text-white/60">Prevent websites from tracking you through browser fingerprinting</p>
+          </div>
+
+          <!-- Total Fingerprinting Blocked Card -->
+          <div class="mb-8">
+            <div class="card rounded-2xl p-8 max-w-md">
+              <h3 class="text-lg font-medium text-white/70 mb-2">Fingerprinting Attempts Blocked</h3>
+              <p id="totalFingerprintBlocked" class="text-5xl font-bold text-white mb-3">0</p>
+              <p class="text-sm text-green-400">Real-time protection</p>
+            </div>
+          </div>
+
+          <!-- Fingerprinting Protection Controls -->
+          <div class="card rounded-2xl p-6 mb-6">
+            <h3 class="text-xl font-semibold text-white mb-4">Protection Settings</h3>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                <div>
+                  <h4 class="text-white font-medium">Canvas Fingerprinting</h4>
+                  <p class="text-white/60 text-sm">Block canvas-based tracking techniques</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="canvasFingerprintToggle" class="sr-only peer" checked>
+                  <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </div>
+
+              <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                <div>
+                  <h4 class="text-white font-medium">WebGL Fingerprinting</h4>
+                  <p class="text-white/60 text-sm">Block WebGL-based tracking techniques</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="webglFingerprintToggle" class="sr-only peer" checked>
+                  <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </div>
+
+              <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                <div>
+                  <h4 class="text-white font-medium">Audio Fingerprinting</h4>
+                  <p class="text-white/60 text-sm">Block audio context fingerprinting</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="audioFingerprintToggle" class="sr-only peer" checked>
+                  <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fingerprinting Info -->
+          <div class="card rounded-2xl p-6 border-l-4 border-primary">
+            <h3 class="text-xl font-semibold text-white mb-2">What is Fingerprinting?</h3>
+            <p class="text-white/60 text-sm mb-4">
+              Browser fingerprinting is a tracking technique that collects information about your browser configuration, 
+              screen resolution, installed fonts, and other characteristics to create a unique identifier for your device.
+            </p>
+            <p class="text-white/60 text-sm">
+              Veil actively randomizes and blocks these fingerprinting attempts to protect your privacy.
+            </p>
+          </div>
+        </section>
+
+        <!-- Hardware Access Section -->
+        <section id="hardware-section" class="min-h-screen pt-12">
+          <div class="mb-8">
+            <h2 class="text-3xl font-bold text-white mb-2">Hardware Access Control</h2>
+            <p class="text-white/60">Manage permissions for camera, microphone, location, and notifications</p>
+          </div>
+
+          <!-- Hardware Stats Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="card rounded-xl p-6">
+              <h4 class="text-sm font-medium text-white/70 mb-1">Camera Access</h4>
+              <p id="cameraBlockedCount" class="text-3xl font-bold text-white mb-1">0</p>
+              <p class="text-xs text-green-400">Requests blocked</p>
+            </div>
+            
+            <div class="card rounded-xl p-6">
+              <h4 class="text-sm font-medium text-white/70 mb-1">Microphone Access</h4>
+              <p id="microphoneBlockedCount" class="text-3xl font-bold text-white mb-1">0</p>
+              <p class="text-xs text-green-400">Requests blocked</p>
+            </div>
+            
+            <div class="card rounded-xl p-6">
+              <h4 class="text-sm font-medium text-white/70 mb-1">Location Access</h4>
+              <p id="locationBlockedCount" class="text-3xl font-bold text-white mb-1">0</p>
+              <p class="text-xs text-green-400">Requests blocked</p>
+            </div>
+            
+            <div class="card rounded-xl p-6">
+              <h4 class="text-sm font-medium text-white/70 mb-1">Notifications</h4>
+              <p id="notificationsBlockedCount" class="text-3xl font-bold text-white mb-1">0</p>
+              <p class="text-xs text-green-400">Requests blocked</p>
+            </div>
+          </div>
+
+          <!-- Hardware Permission Controls -->
+          <div class="card rounded-2xl p-6 mb-6">
+            <h3 class="text-xl font-semibold text-white mb-4">Permission Controls</h3>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="text-white font-medium">Block Camera</h4>
+                    <p class="text-white/60 text-sm">Prevent websites from accessing your camera</p>
+                  </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="cameraToggle" class="sr-only peer" data-permission="camera" checked>
+                  <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </div>
+
+              <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="text-white font-medium">Block Microphone</h4>
+                    <p class="text-white/60 text-sm">Prevent websites from accessing your microphone</p>
+                  </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="microphoneToggle" class="sr-only peer" data-permission="microphone" checked>
+                  <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </div>
+
+              <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="text-white font-medium">Block Location</h4>
+                    <p class="text-white/60 text-sm">Prevent websites from accessing your location</p>
+                  </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="locationToggle" class="sr-only peer" data-permission="location" checked>
+                  <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </div>
+
+              <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="text-white font-medium">Block Notifications</h4>
+                    <p class="text-white/60 text-sm">Prevent websites from showing notifications</p>
+                  </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="notificationsToggle" class="sr-only peer" data-permission="notifications" checked>
+                  <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hardware Activity Log -->
+          <div class="card rounded-2xl p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold text-white">Recent Hardware Access Attempts</h3>
+              <button id="clearHardwareLog" class="text-sm text-white/60 hover:text-white transition-colors">Clear Log</button>
+            </div>
+            <div id="hardwareActivityLog" class="space-y-3 max-h-96 overflow-y-auto">
+              <div class="flex items-center justify-center py-8">
+                <p class="text-white/60">No hardware access attempts logged yet</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Link to external JavaScript -->
+  <script src="../vendor/chart.js"></script>
+  <script src="../scripts/cookieManager.js"></script>
+  <script src="../scripts/dashboard.js"></script>
+</body>
+</html>

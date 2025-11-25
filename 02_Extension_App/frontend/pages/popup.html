@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Score</title>
+
+  <!-- Link to external CSS -->
+  <link rel="stylesheet" href="../styles/popup.css">
+</head>
+
+<body class="font-display text-white antialiased">
+  <div class="card-container">
+    <!-- Card uses your navy→deep-navy gradient, with neon accents -->
+    <div class="card space-y-6">
+
+      <!-- Donut -->
+      <div class="relative w-48 h-48 mx-auto">
+        <svg class="w-full h-full" viewBox="0 0 100 100" aria-label="Privacy Score">
+          <!-- track -->
+          <circle cx="50" cy="50" r="45" fill="transparent"
+                  class="text-white-10" stroke="currentColor" stroke-width="10"></circle>
+          <!-- progress -->
+          <circle cx="50" cy="50" r="45" fill="transparent"
+                  class="progress-ring__circle" stroke-linecap="round" stroke-width="10"></circle>
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <span id="scoreValue" class="text-5xl font-extrabold text-primary">0</span>
+          <span class="text-sm font-medium text-white-60">Privacy Score</span>
+        </div>
+      </div>
+
+      <!-- Copy -->
+      <div class="text-center">
+        <h2 id="scoreMessage" class="text-xl font-bold">Analyzing your privacy...</h2>
+        <p class="mt-1 text-sm text-white-60">Please wait while we calculate your score.</p>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-col gap-3 pt-2">
+        <button id="goPrivateBtn" class="w-full h-12 px-6 text-base font-bold rounded-lg">
+          Go Private
+        </button>
+        <button id="detailsBtn" class="w-full h-12 px-6 text-base font-bold rounded-lg">
+          Details
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Link to external JavaScript -->
+  <script src="../scripts/popup.js"></script>
+</body>
+</html>

@@ -65,34 +65,36 @@ function setupBlockingRules() {
   });
 }
 
-// Listen for web requests to track blocking activity
-chrome.webRequest.onBeforeRequest.addListener(
-  (details) => {
-    // Update statistics when requests are blocked
-    updateBlockingStats(details);
-  },
-  { urls: ['<all_urls>'] },
-  ['blocking']
-);
+// Listen for declarativeNetRequest rule matches to track blocking activity
+chrome.declarativeNetRequest.onRuleMatchedDebug.addListener((details) => {
+  // Update statistics when requests are blocked
+  updateBlockingStats(details);
+});
 
 // Update blocking statistics
 async function updateBlockingStats(details) {
-  const stats = await chrome.storage.local.get([
-    'cookiesBlocked',
-    'dnsRequestsBlocked',
-    'fingerprintingBlocked',
-    'hardwareAccessBlocked'
-  ]);
-  
-  // Increment appropriate counter based on request type
-  if (details.type === 'xmlhttprequest') {
-    stats.dnsRequestsBlocked = (stats.dnsRequestsBlocked || 0) + 1;
+  try {
+    const stats = await chrome.storage.local.get([
+      'cookiesBlocked',
+      'dnsRequestsBlocked',
+      'fingerprintingBlocked',
+      'hardwareAccessBlocked'
+    ]);
+    
+    // Increment appropriate counter based on request type
+    if (details.request && details.request.type === 'xmlhttprequest') {
+      stats.dnsRequestsBlocked = (stats.dnsRequestsBlocked || 0) + 1;
+    } else {
+      stats.dnsRequestsBlocked = (stats.dnsRequestsBlocked || 0) + 1;
+    }
+    
+    await chrome.storage.local.set(stats);
+    
+    // Update privacy score
+    calculatePrivacyScore();
+  } catch (error) {
+    console.error('Error updating blocking stats:', error);
   }
-  
-  await chrome.storage.local.set(stats);
-  
-  // Update privacy score
-  calculatePrivacyScore();
 }
 
 // Calculate overall privacy score

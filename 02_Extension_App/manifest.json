@@ -79,6 +79,6 @@
   },
   
   "content_security_policy": {
-    "extension_pages": "script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; object-src 'self'"
+    "extension_pages": "script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; object-src 'self'"
   }
 }

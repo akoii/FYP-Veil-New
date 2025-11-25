@@ -5,67 +5,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Privacy Score</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet" />
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-
-  <!-- Tailwind theme using your colors -->
-  <script id="tailwind-config">
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            primary: "#EBFF3D",           /* neon yellow */
-            secondary: "#1E2366",         /* navy */
-            "background-light": "#f7f8f5",
-            "background-dark": "#1a230f",
-          },
-          fontFamily: { display: ["Manrope"] },
-          borderRadius: { DEFAULT: "0.5rem", lg: "1rem", xl: "1.5rem", full: "9999px" },
-        },
-      },
-    }
-  </script>
-
   <!-- Link to external CSS -->
   <link rel="stylesheet" href="../styles/popup.css">
 </head>
 
 <body class="font-display text-white antialiased">
-  <div class="flex items-center justify-center bg-transparent p-4" style="width: 380px; min-height: 500px;">
+  <div class="card-container">
     <!-- Card uses your navy→deep-navy gradient, with neon accents -->
-    <div class="w-full p-6 space-y-6 rounded-xl shadow-lg text-white bg-gradient-to-br from-secondary to-[#10133a]">
+    <div class="card space-y-6">
 
       <!-- Donut -->
       <div class="relative w-48 h-48 mx-auto">
         <svg class="w-full h-full" viewBox="0 0 100 100" aria-label="Privacy Score">
           <!-- track -->
           <circle cx="50" cy="50" r="45" fill="transparent"
-                  class="text-white/10" stroke="currentColor" stroke-width="10"></circle>
+                  class="text-white-10" stroke="currentColor" stroke-width="10"></circle>
           <!-- progress -->
           <circle cx="50" cy="50" r="45" fill="transparent"
                   class="progress-ring__circle" stroke-linecap="round" stroke-width="10"></circle>
         </svg>
         <div class="absolute inset-0 flex flex-col items-center justify-center">
           <span id="scoreValue" class="text-5xl font-extrabold text-primary">0</span>
-          <span class="text-sm font-medium text-white/60">Privacy Score</span>
+          <span class="text-sm font-medium text-white-60">Privacy Score</span>
         </div>
       </div>
 
       <!-- Copy -->
       <div class="text-center">
         <h2 id="scoreMessage" class="text-xl font-bold">Analyzing your privacy...</h2>
-        <p class="mt-1 text-sm text-white/60">Please wait while we calculate your score.</p>
+        <p class="mt-1 text-sm text-white-60">Please wait while we calculate your score.</p>
       </div>
 
       <!-- Actions -->
       <div class="flex flex-col gap-3 pt-2">
-        <button id="goPrivateBtn" class="flex items-center justify-center w-full h-12 px-6 text-base font-bold text-secondary bg-primary rounded-lg transition-all duration-300 ease-out transform active:scale-95 hover:bg-[#dffb2f] hover:scale-105 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-1">
+        <button id="goPrivateBtn" class="w-full h-12 px-6 text-base font-bold rounded-lg">
           Go Private
         </button>
-        <button id="detailsBtn" class="flex items-center justify-center w-full h-12 px-6 text-base font-bold text-white bg-white/10 rounded-lg transition-all duration-300 ease-out transform active:scale-95 hover:bg-white/20 hover:scale-105 hover:shadow-lg hover:shadow-white/20 hover:-translate-y-1">
+        <button id="detailsBtn" class="w-full h-12 px-6 text-base font-bold rounded-lg">
           Details
         </button>
       </div>

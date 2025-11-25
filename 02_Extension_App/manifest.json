@@ -19,8 +19,7 @@
     "<all_urls>"
   ],
   "background": {
-    "service_worker": "core/service-worker.js",
-    "type": "module"
+    "service_worker": "core/service-worker.js"
   },
   "action": {
     "default_popup": "frontend/pages/popup.html",
@@ -36,6 +35,6 @@
     "128": "frontend/assets/icon128.svg"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; object-src 'self'"
   }
 }

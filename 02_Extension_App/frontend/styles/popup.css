@@ -6,6 +6,15 @@
   --ring-color: #FF4444;              /* start with red */
 }
 
+body {
+  margin: 0;
+  padding: 0;
+  width: 380px;
+  min-height: 500px;
+  background: transparent;
+  overflow-x: hidden;
+}
+
 .progress-ring__circle {
   stroke-dasharray: var(--circumference);
   stroke-dashoffset: calc(var(--circumference) - (var(--circumference) * var(--score)) / 100);

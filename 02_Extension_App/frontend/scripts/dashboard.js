@@ -354,7 +354,7 @@ async function loadCookies() {
             // Filter out cookies that failed API classification
             const beforeFilter = allCookies.length;
             allCookies = allCookies.filter(cookie => {
-                const hasValidClassification = cookie.classification ? .class_id !== null && cookie.classification ? .class_id !== undefined;
+                const hasValidClassification = cookie.classification?.class_id !== null && cookie.classification?.class_id !== undefined;
                 if (!hasValidClassification) {
                     console.warn(`[Dashboard] Removing cookie "${cookie.name}" - API classification failed`);
                 }
@@ -413,7 +413,7 @@ function renderCookiesByCategory(cookies) {
     };
 
     cookies.forEach(cookie => {
-        const classId = cookie.classification ? .class_id;
+        const classId = cookie.classification?.class_id;
 
         // Skip cookies that failed classification or have no API result
         if (classId === null || classId === undefined) {

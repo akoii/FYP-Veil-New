@@ -148,4 +148,67 @@ window.addEventListener('load', () => {
   }, 300); // Reduced delay for more responsive feel
 });
 
+// ====== Button Handlers ======
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[popup.js] Initializing button handlers...');
+  
+  // ====== Details Button - Opens Dashboard ======
+  const detailsBtn = document.getElementById('detailsBtn');
+  if (detailsBtn) {
+    detailsBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      console.log('[popup.js] Details button clicked');
+      
+      // Open dashboard in new tab
+      const dashboardUrl = chrome.runtime.getURL('frontend/pages/dashboard.html');
+      console.log('[popup.js] Opening dashboard:', dashboardUrl);
+      chrome.tabs.create({ url: dashboardUrl });
+    });
+    console.log('[popup.js] Details button handler attached');
+  }
+  
+  // ====== Go Private Button - Activates Privacy Mode ======
+  const goPrivateBtn = document.getElementById('goPrivateBtn');
+  if (goPrivateBtn) {
+    goPrivateBtn.addEventListener('click', async function(e) {
+      e.preventDefault();
+      console.log('[popup.js] Go Private button clicked');
+      
+      try {
+        // Visual feedback
+        const originalText = goPrivateBtn.textContent;
+        goPrivateBtn.textContent = 'Activating...';
+        goPrivateBtn.disabled = true;
+        
+        // Send message to service worker
+        chrome.runtime.sendMessage({ action: 'activatePrivacy' }, function(response) {
+          if (chrome.runtime.lastError) {
+            console.warn('[popup.js] Service worker error:', chrome.runtime.lastError);
+          } else {
+            console.log('[popup.js] Privacy mode activated:', response);
+          }
+          
+          // Update button
+          goPrivateBtn.textContent = 'Privacy Active!';
+          goPrivateBtn.classList.add('opacity-75');
+          
+          // Reset after delay
+          setTimeout(() => {
+            goPrivateBtn.textContent = originalText;
+            goPrivateBtn.disabled = false;
+            goPrivateBtn.classList.remove('opacity-75');
+          }, 2000);
+        });
+        
+      } catch (error) {
+        console.error('[popup.js] Error activating privacy mode:', error);
+        goPrivateBtn.textContent = 'Try Again';
+        goPrivateBtn.disabled = false;
+      }
+    });
+    console.log('[popup.js] Go Private button handler attached');
+  }
+});
+
 // Example: setScore(88);
+

@@ -46,9 +46,12 @@ tfjs_model/
 
 # Dataset files (large files)
 *.csv
-*.json
 datasets/
 !datasets/README.md
+
+# Ignore large JSON data files but keep config files
+package-lock.json
+tsconfig.json.bak
 
 # IDE
 .vscode/

@@ -29,8 +29,6 @@ async function initializeSettings() {
   const defaults = {
     privacyScore: 0,
     cookiesBlocked: 0,
-    dnsRequestsBlocked: 0,
-    fingerprintingBlocked: 0,
     hardwareAccessBlocked: 0,
     trackingHistory: [],
     lastUpdated: Date.now(),
@@ -103,16 +101,10 @@ chrome.webRequest.onBeforeRequest.addListener(
 async function updateBlockingStats(details) {
   const stats = await chrome.storage.local.get([
     'cookiesBlocked',
-    'dnsRequestsBlocked',
-    'fingerprintingBlocked',
     'hardwareAccessBlocked'
   ]);
   
-  // Increment appropriate counter based on request type
-  if (details.type === 'xmlhttprequest') {
-    stats.dnsRequestsBlocked = (stats.dnsRequestsBlocked || 0) + 1;
-  }
-  
+  // Statistics updated through other mechanisms
   await chrome.storage.local.set(stats);
   
   // Update privacy score
@@ -123,16 +115,12 @@ async function updateBlockingStats(details) {
 async function calculatePrivacyScore() {
   const stats = await chrome.storage.local.get([
     'cookiesBlocked',
-    'dnsRequestsBlocked',
-    'fingerprintingBlocked',
     'hardwareAccessBlocked'
   ]);
   
   // Simple scoring algorithm (can be enhanced with AI model)
   const totalBlocked = 
     (stats.cookiesBlocked || 0) +
-    (stats.dnsRequestsBlocked || 0) +
-    (stats.fingerprintingBlocked || 0) +
     (stats.hardwareAccessBlocked || 0);
   
   // Score from 0-100 based on blocked items
@@ -210,8 +198,6 @@ async function activatePrivacyMode() {
     // Update statistics to reflect enhanced protection
     const stats = await chrome.storage.local.get([
       'cookiesBlocked',
-      'dnsRequestsBlocked',
-      'fingerprintingBlocked',
       'hardwareAccessBlocked',
       'privacyScore'
     ]);

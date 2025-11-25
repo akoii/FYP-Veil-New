@@ -149,18 +149,6 @@ export async function disableWebRTC() {
   }
 }
 
-// Enable fingerprinting protection
-export async function enableFingerprintingProtection() {
-  try {
-    // Block canvas fingerprinting by randomizing canvas data
-    await chrome.privacy.websites.protectedContentEnabled.set({ value: false });
-    return true;
-  } catch (error) {
-    console.error('Error enabling fingerprinting protection:', error);
-    return false;
-  }
-}
-
 /**
  * Tab and Request Management
  */

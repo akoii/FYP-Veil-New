@@ -60,22 +60,6 @@
               </a>
             </li>
             <li>
-              <a href="#dns-section" onclick="scrollToSection('dns-section')" class="sidebar-item flex items-center gap-3 p-3 rounded-lg text-sm font-medium text-white/70 hover:text-white" data-section="dns-section">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"></path>
-                </svg>
-                DNS
-              </a>
-            </li>
-            <li>
-              <a href="#fingerprinting-section" onclick="scrollToSection('fingerprinting-section')" class="sidebar-item flex items-center gap-3 p-3 rounded-lg text-sm font-medium text-white/70 hover:text-white" data-section="fingerprinting-section">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M6.672 1.911a1 1 0 10-1.932.518l.259.966a1 1 0 001.932-.518l-.26-.966zM2.429 4.74a1 1 0 10-.517 1.932l.966.259a1 1 0 00.517-1.932l-.966-.26zm8.814-.569a1 1 0 00-1.415-1.414l-.707.707a1 1 0 101.415 1.414l.707-.707zm-7.071 7.072l.707-.707A1 1 0 003.465 9.12l-.708.707a1 1 0 001.415 1.415zm3.2-5.171a1 1 0 00-1.3 1.3l4 10a1 1 0 001.823.075l1.38-2.759 3.018 3.02a1 1 0 001.414-1.415l-3.019-3.02 2.76-1.379a1 1 0 00-.076-1.822l-10-4z"></path>
-                </svg>
-                Fingerprinting
-              </a>
-            </li>
-            <li>
               <a href="#hardware-section" onclick="scrollToSection('hardware-section')" class="sidebar-item flex items-center gap-3 p-3 rounded-lg text-sm font-medium text-white/70 hover:text-white" data-section="hardware-section">
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path>
@@ -165,23 +149,11 @@
               <!-- Blocked Items -->
               <div class="fade-in stagger-2">
                 <h3 class="text-lg font-semibold mb-4 text-white">Blocked Items</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   
                   <div class="card rounded-xl p-4">
                     <h4 class="text-sm font-medium text-white/70 mb-1">Cookies</h4>
                     <p id="cookiesBlockedStat" class="text-2xl font-bold text-white mb-1">0</p>
-                    <p class="text-xs text-green-400">Real-time tracking</p>
-                  </div>
-                  
-                  <div class="card rounded-xl p-4">
-                    <h4 class="text-sm font-medium text-white/70 mb-1">DNS Requests</h4>
-                    <p id="dnsBlockedStat" class="text-2xl font-bold text-white mb-1">0</p>
-                    <p class="text-xs text-green-400">Real-time tracking</p>
-                  </div>
-                  
-                  <div class="card rounded-xl p-4">
-                    <h4 class="text-sm font-medium text-white/70 mb-1">Browser Fingerprint</h4>
-                    <p id="fingerprintBlockedStat" class="text-2xl font-bold text-white mb-1">0</p>
                     <p class="text-xs text-green-400">Real-time tracking</p>
                   </div>
                   

@@ -28,13 +28,11 @@ function initializeCharts() {
   new Chart(scoreCtx, {
     type: 'doughnut',
     data: {
-      labels: ['Cookies', 'DNS Requests', 'Fingerprinting', 'Hardware Access'],
+      labels: ['Cookies', 'Hardware Access'],
       datasets: [{
-        data: [58.8, 23.5, 11.8, 5.9],
+        data: [70, 30],
         backgroundColor: [
           '#EBFF3D',  // Cookies - Brand Green
-          '#4DD4E8',  // DNS Requests - Bright Cyan
-          '#9D7AEA',  // Fingerprinting - Soft Purple
           '#FF8C69'   // Hardware Access - Coral Orange
         ],
         borderWidth: 0
@@ -202,12 +200,6 @@ function updateHeaderTitle() {
         switch(sectionId) {
           case 'cookies-section':
             title = 'Cookies';
-            break;
-          case 'dns-section':
-            title = 'DNS';
-            break;
-          case 'fingerprinting-section':
-            title = 'Fingerprinting';
             break;
           case 'hardware-section':
             title = 'Hardware Access';
@@ -1331,18 +1323,6 @@ function updateBlockedItemsStats(stats) {
     cookiesEl.textContent = formatNumber(stats.cookiesBlocked || 0);
   }
   
-  // Update DNS Requests Blocked
-  const dnsEl = document.getElementById('dnsBlockedStat');
-  if (dnsEl) {
-    dnsEl.textContent = formatNumber(stats.dnsRequestsBlocked || 0);
-  }
-  
-  // Update Fingerprinting Blocked
-  const fingerprintEl = document.getElementById('fingerprintBlockedStat');
-  if (fingerprintEl) {
-    fingerprintEl.textContent = formatNumber(stats.fingerprintingBlocked || 0);
-  }
-  
   // Update Hardware Access Blocked
   const hardwareEl = document.getElementById('hardwareBlockedStat');
   if (hardwareEl) {
@@ -1351,8 +1331,6 @@ function updateBlockedItemsStats(stats) {
   
   console.log('[Statistics] Blocked items updated:', {
     cookies: stats.cookiesBlocked,
-    dns: stats.dnsRequestsBlocked,
-    fingerprinting: stats.fingerprintingBlocked,
     hardware: stats.hardwareAccessBlocked
   });
 }
@@ -1374,24 +1352,18 @@ function updateScoreBreakdownChart(stats) {
   // Calculate percentages based on actual blocked items
   const total = 
     (stats.cookiesBlocked || 0) +
-    (stats.dnsRequestsBlocked || 0) +
-    (stats.fingerprintingBlocked || 0) +
     (stats.hardwareAccessBlocked || 0);
   
   if (total === 0) {
     // No data yet, show equal distribution
-    scoreChart.data.datasets[0].data = [25, 25, 25, 25];
+    scoreChart.data.datasets[0].data = [50, 50];
   } else {
     // Calculate percentages
     const cookiesPercent = ((stats.cookiesBlocked || 0) / total) * 100;
-    const dnsPercent = ((stats.dnsRequestsBlocked || 0) / total) * 100;
-    const fingerprintPercent = ((stats.fingerprintingBlocked || 0) / total) * 100;
     const hardwarePercent = ((stats.hardwareAccessBlocked || 0) / total) * 100;
     
     scoreChart.data.datasets[0].data = [
       cookiesPercent.toFixed(1),
-      dnsPercent.toFixed(1),
-      fingerprintPercent.toFixed(1),
       hardwarePercent.toFixed(1)
     ];
   }
@@ -1412,16 +1384,12 @@ async function getStatisticsSummary() {
     if (stats) {
       const total = 
         (stats.cookiesBlocked || 0) +
-        (stats.dnsRequestsBlocked || 0) +
-        (stats.fingerprintingBlocked || 0) +
         (stats.hardwareAccessBlocked || 0);
       
       return {
         privacyScore: stats.privacyScore || 0,
         totalBlocked: total,
         cookiesBlocked: stats.cookiesBlocked || 0,
-        dnsBlocked: stats.dnsRequestsBlocked || 0,
-        fingerprintingBlocked: stats.fingerprintingBlocked || 0,
         hardwareBlocked: stats.hardwareAccessBlocked || 0,
         lastUpdated: stats.lastUpdated || Date.now()
       };
@@ -1448,8 +1416,6 @@ async function exportStatistics() {
         blockedItems: {
           total: summary.totalBlocked,
           cookies: summary.cookiesBlocked,
-          dns: summary.dnsBlocked,
-          fingerprinting: summary.fingerprintingBlocked,
           hardware: summary.hardwareBlocked
         }
       };

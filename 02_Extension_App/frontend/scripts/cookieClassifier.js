@@ -24,7 +24,7 @@ const CookieClassifier = {
   // Rate limiting tracking
   lastRequestTime: 0,
   requestQueue: [],
-  isProcessing: false
+  isProcessing: false,
   
   // Category mapping with UI colors and labels
   CATEGORIES: {

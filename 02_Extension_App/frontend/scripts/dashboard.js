@@ -344,7 +344,7 @@ async function loadCookies() {
             // Merge classification data with cookie objects
             allCookies = allCookies.map((cookie, idx) => {
                 const classification = classifications[idx];
-                console.log(`[Dashboard] Cookie "${cookie.name}" classified as:`, classification ? .category, `(class_id: ${classification?.class_id})`);
+                console.log(`[Dashboard] Cookie "${cookie.name}" classified as:`, classification?.category, `(class_id: ${classification?.class_id})`);
                 return {
                     ...cookie,
                     classification: classification

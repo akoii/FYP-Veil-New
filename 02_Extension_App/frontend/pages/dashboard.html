@@ -4,35 +4,13 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:;">
+    <title>Veil - Dashboard</title>
     <title>Veil - Dashboard</title>
 
     <!-- Use local vendor files instead of CDN for Chrome Extension -->
     <script src="../vendor/tailwind.js"></script>
     <script src="../vendor/chart.js"></script>
-
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        primary: "#EBFF3D",
-                        secondary: "#1E2366",
-                        "navy-dark": "#252B5C",
-                        "navy-light": "#3B4583",
-                        "navy-bg": "#1A1F4A",
-                        "card-bg": "#252B5C",
-                        "sidebar-bg": "#1E2366",
-                    },
-                    fontFamily: {
-                        display: ["Inter", "sans-serif"],
-                        sans: ["Inter", "sans-serif"]
-                    },
-                },
-            },
-        }
-    </script>
+    <script src="../scripts/tailwind-config.js"></script>
 
     <!-- Link to external CSS -->
     <link rel="stylesheet" href="../styles/dashboard.css">

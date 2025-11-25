@@ -26,6 +26,7 @@
   },
   
   "action": {
+    "default_popup": "frontend/pages/popup.html",
     "default_icon": {
       "16": "frontend/assets/icon16.svg",
       "48": "frontend/assets/icon48.svg",

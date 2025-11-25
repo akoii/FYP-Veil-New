@@ -342,132 +342,85 @@ Flask REST API providing:
 
 ---
 
+## 📝 Recent Implementation (Phase 5)
 
-## 🚀 Features
+### **Real-Time Statistics Display**
+- **File Modified:** `dashboard.js` (lines 1214-1456)
+- **Features Added:**
+  1. `loadRealStatistics()` - Main loader with auto-refresh
+  2. `updatePrivacyScore()` - Animated score with color coding
+  3. `updateBlockedItemsStats()` - Live counter updates
+  4. `formatNumber()` - Comma-separated number formatting
+  5. `updateScoreBreakdownChart()` - Dynamic chart updates
+  6. `getStatisticsSummary()` - Statistics aggregation
+  7. `exportStatistics()` - JSON export functionality
+  8. `resetStatistics()` - Admin reset function
 
-- **Real-time Privacy Score**: Visual representation of your browsing privacy
-- **Interactive Timeframe Toggle**: View tracking history across different time periods (7D, 30D, 3M, Total) ✨ **NEW**
-- **Cookie Management**: Block and manage tracking cookies
-- **DNS Request Blocking**: Prevent DNS-based tracking
-- **Fingerprinting Protection**: Protect against browser fingerprinting
-- **Hardware Access Control**: Manage camera, microphone, and location access
-- **AI-Powered Detection**: Machine learning model for detecting new trackers
-- **Dynamic Blocklists**: Auto-updating tracker blocklists
-
-## 🛠️ Installation
-
-### Extension Setup
-
-1. Navigate to `02_Extension_App/`
-2. Load the unpacked extension in Chrome:
-   - Open Chrome and go to `chrome://extensions/`
-   - Enable "Developer mode"
-   - Click "Load unpacked"
-   - Select the `02_Extension_App` directory
-
-### Python Environment Setup
-
-```bash
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Navigate to AI/ML pipeline
-cd 03_AI_ML_Pipeline/model_training
-
-# Train the model (optional)
-python tracker_detection_model.py
-```
-
-## 💻 Development
-
-### Running Tests
-
-```bash
-# Run unit tests
-cd 04_Testing/unit_tests
-python -m pytest
-
-# Run performance benchmarks
-cd 04_Testing/performance_benchmarks
-python page_load_benchmark.py
-```
-
-### Training the ML Model
-
-```bash
-cd 03_AI_ML_Pipeline/model_training
-python tracker_detection_model.py
-```
-
-## 📊 Performance
-
-The extension is designed to have minimal impact on page load times while providing maximum privacy protection. See `04_Testing/performance_benchmarks/` for detailed performance analysis.
-
-## 🔒 Privacy Features
-
-### Cookie Blocking
-- Blocks third-party tracking cookies
-- Manages advertising cookies
-- Allows necessary functional cookies
-
-### DNS Protection
-- Blocks known tracking domains
-- Uses EasyPrivacy and uBlock Origin lists
-- Dynamic rule generation
-
-### Fingerprinting Protection
-- Canvas fingerprinting protection
-- WebRTC IP leak prevention
-- User agent randomization
-
-## 📈 Privacy Score Calculation
-
-The privacy score is calculated based on:
-- Number of cookies blocked
-- DNS requests blocked
-- Fingerprinting attempts blocked
-- Hardware access requests blocked
-
-Score ranges:
-- 0-50: Privacy at risk
-- 50-75: Room for improvement
-- 75-100: Excellent privacy protection
-
-## 🤝 Contributing
-
-This is an FYP (Final Year Project). For questions or contributions, please contact the project team.
-
-## 📄 License
-
-This project is part of an academic final year project.
-
-## 👥 Team
-
-Asjad Hashmi aj0_0h @github
-Umair Rasheed
-M. Aqib
-
-
-## 📚 Documentation
-
-Detailed documentation can be found in the `01_Docs/` directory:
-- **Proposal**: Initial project proposal and objectives
-- **SRS**: Software Requirements Specification
-- **Design**: System architecture and UI/UX design
-
-### Feature Documentation
-- **[TIMEFRAME_TOGGLE_IMPLEMENTATION.md](TIMEFRAME_TOGGLE_IMPLEMENTATION.md)**: Complete technical guide for the timeframe toggle feature
-- **[TIMEFRAME_TOGGLE_QUICKSTART.md](TIMEFRAME_TOGGLE_QUICKSTART.md)**: Developer quick reference
-- **[TIMEFRAME_TOGGLE_VISUAL_GUIDE.md](TIMEFRAME_TOGGLE_VISUAL_GUIDE.md)**: Visual design and layout reference
-- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)**: Implementation status and checklist
-
-## 🔗 References
-
-- [Chrome Extension API](https://developer.chrome.com/docs/extensions/)
-- [TensorFlow.js](https://www.tensorflow.org/js)
-- [EasyPrivacy List](https://easylist.to/)
-- [uBlock Origin](https://github.com/gorhill/uBlock)
+### **Privacy Score Color Coding**
+- **80-100:** 🎉 Excellent Protection (Green #EBFF3D)
+- **60-79:** ✅ Good Protection (Cyan #4DD4E8)
+- **40-59:** ⚠️ Moderate Protection (Orange #FFB366)
+- **0-39:** 🚨 Weak Protection (Red #FF6B6B)
 
 ---
 
-**Note**: This project is for educational purposes as part of a Final Year Project (FYP).
+## 📖 Documentation Files (Root)
+
+| File | Description |
+|------|-------------|
+| `CHANGELOG.md` | Version history and changes |
+| `COLOR_PALETTE_QUICK_REFERENCE.md` | UI color palette guide |
+| `COLOR_SYSTEM_DESIGN.md` | Design system documentation |
+| `COOKIE_CLASSIFICATION_GUIDE.md` | Cookie classification details |
+| `COOKIE_CLASSIFICATION_QUICKSTART.md` | Quick start for cookie features |
+| `DIAGNOSTIC_REPORT.md` | System diagnostics |
+| `FUNCTIONALITY_VERIFICATION.md` | Feature verification checklist |
+| `GETTING_STARTED.md` | Project setup guide |
+| `IMPLEMENTATION_SUMMARY.md` | Implementation overview |
+| `PIE_CHART_COLOR_RECOMMENDATIONS.md` | Chart color guidelines |
+| `PROJECT_SETUP_COMPLETE.md` | Setup completion confirmation |
+| `TESTING_CHECKLIST.md` | Testing procedures |
+| `TIMEFRAME_TOGGLE_IMPLEMENTATION.md` | Timeframe feature docs |
+
+---
+
+## 🛠️ Setup & Installation
+
+### **Prerequisites**
+- Node.js & npm
+- Python 3.x
+- Chrome/Chromium browser
+
+### **Installation Steps**
+1. Clone repository: `git clone https://github.com/akoii/FYP-Veil-New.git`
+2. Install Python dependencies: `pip install -r requirements.txt`
+3. Install API dependencies: `pip install -r 03_AI_ML_Pipeline/deployment/requirements-api.txt`
+4. Start API server: `.\start-api.ps1` or `python 03_AI_ML_Pipeline/deployment/cookie_classifier_api.py`
+5. Load extension in Chrome:
+   - Navigate to `chrome://extensions/`
+   - Enable "Developer mode"
+   - Click "Load unpacked"
+   - Select `02_Extension_App/` directory
+
+---
+
+## 🔄 Git Branches
+- **main:** Production-ready code
+- **asjad-branch:** Development branch (merged to main)
+
+---
+
+## 👥 Project Information
+- **Repository:** https://github.com/akoii/FYP-Veil-New
+- **Owner:** akoii
+- **Type:** Final Year Project (FYP)
+- **Category:** Privacy & Security Chrome Extension
+
+---
+
+## 📅 Last Updated
+November 25, 2025 - Phase 5 Completed
+
+---
+
+*This structure represents the complete FYP-Veil privacy extension with real-time tracking detection, AI-powered cookie classification, and comprehensive hardware access control.*

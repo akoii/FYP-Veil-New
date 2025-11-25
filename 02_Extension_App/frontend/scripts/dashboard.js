@@ -351,19 +351,22 @@ async function loadCookies() {
         };
       });
       
-      // Filter out cookies that failed API classification
-      const beforeFilter = allCookies.length;
-      allCookies = allCookies.filter(cookie => {
-        const hasValidClassification = cookie.classification?.class_id !== null && cookie.classification?.class_id !== undefined;
-        if (!hasValidClassification) {
-          console.warn(`[Dashboard] Removing cookie "${cookie.name}" - API classification failed`);
-        }
-        return hasValidClassification;
-      });
-      console.log(`[Dashboard] Filtered cookies: ${beforeFilter} total → ${allCookies.length} with valid API classifications (${beforeFilter - allCookies.length} removed)`);
+      // Count successfully classified cookies
+      const successCount = allCookies.filter(cookie => 
+        cookie.classification?.class_id !== null && 
+        cookie.classification?.class_id !== undefined
+      ).length;
+      const failedCount = allCookies.length - successCount;
       
-      // Log statistics
-      const stats = CookieClassifier.getStatistics(classifications);
+      console.log(`[Dashboard] Classification results: ${successCount} successful, ${failedCount} failed out of ${allCookies.length} total`);
+      
+      if (failedCount > 0) {
+        console.warn(`[Dashboard] ${failedCount} cookies failed classification - they will still be displayed but may not be categorized`);
+      }
+      
+      // Log statistics for successfully classified cookies
+      const validClassifications = classifications.filter(c => c.class_id !== null && c.class_id !== undefined);
+      const stats = CookieClassifier.getStatistics(validClassifications);
       console.log('[Dashboard] Classification stats:', stats);
     } else {
       console.warn('[Dashboard] CookieClassifier not available or no cookies to classify');
@@ -415,16 +418,43 @@ function renderCookiesByCategory(cookies) {
   cookies.forEach(cookie => {
     const classId = cookie.classification?.class_id;
     
-    // Skip cookies that failed classification or have no API result
+    // If cookie has no valid classification, default to Analytics (class 2) as a safe default
     if (classId === null || classId === undefined) {
-      console.warn(`[Dashboard] Cookie "${cookie.name}" has NO valid API classification - skipping display`);
+      console.warn(`[Dashboard] Cookie "${cookie.name}" has NO valid API classification - defaulting to Analytics category`);
+      // Assign default classification
+      cookie.classification = {
+        category: 'Analytics',
+        class_id: 2,
+        confidence: null,
+        name: 'Analytics',
+        color: 'yellow',
+        bgColor: 'bg-yellow-500/20',
+        textColor: 'text-yellow-400',
+        borderColor: 'border-yellow-500/30',
+        icon: '📊',
+        error: true
+      };
+      categorizedCookies[2].push(cookie);
       return;
     }
     
     if (categorizedCookies[classId] !== undefined) {
       categorizedCookies[classId].push(cookie);
     } else {
-      console.error(`[Dashboard] Invalid class_id ${classId} for cookie "${cookie.name}" - skipping`);
+      console.error(`[Dashboard] Invalid class_id ${classId} for cookie "${cookie.name}" - defaulting to Analytics`);
+      cookie.classification = {
+        category: 'Analytics',
+        class_id: 2,
+        confidence: null,
+        name: 'Analytics',
+        color: 'yellow',
+        bgColor: 'bg-yellow-500/20',
+        textColor: 'text-yellow-400',
+        borderColor: 'border-yellow-500/30',
+        icon: '📊',
+        error: true
+      };
+      categorizedCookies[2].push(cookie);
     }
   });
   

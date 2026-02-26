@@ -1,284 +1,79 @@
 /* Popup Page Styles */
 
 :root {
-  --score: 0;
-  --circumference: 282.743338823;
-  --ring-color: #FF4444;
-  --primary: #EBFF3D;
-  --secondary: #1E2366;
-}
+  --score: 0;                          /* start from 0 for animation */
+  --circumference: 263.89;             /* 2πr for r=42 */
+  --ring-color: #FF4444;              /* start with red */
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  width: 380px;
-  min-height: 500px;
-  background: transparent;
-  overflow-x: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: white;
-  -webkit-font-smoothing: antialiased;
-}
-
-.flex {
-  display: flex;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.justify-center {
-  justify-content: center;
-}
-
-.flex-col {
-  flex-direction: column;
-}
-
-.gap-3 {
-  gap: 0.75rem;
-}
-
-.space-y-6 > * + * {
-  margin-top: 1.5rem;
-}
-
-.w-full {
-  width: 100%;
-}
-
-.h-12 {
-  height: 3rem;
-}
-
-.w-48 {
-  width: 12rem;
-}
-
-.h-48 {
-  height: 12rem;
-}
-
-.p-4 {
-  padding: 1rem;
-}
-
-.p-6 {
-  padding: 1.5rem;
-}
-
-.px-6 {
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
-}
-
-.pt-2 {
-  padding-top: 0.5rem;
-}
-
-.mt-1 {
-  margin-top: 0.25rem;
-}
-
-.mx-auto {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.rounded-xl {
-  border-radius: 0.75rem;
-}
-
-.rounded-lg {
-  border-radius: 0.5rem;
-}
-
-.shadow-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.text-white {
-  color: white;
-}
-
-.text-primary {
-  color: var(--primary);
-}
-
-.text-secondary {
-  color: var(--secondary);
-}
-
-.text-5xl {
-  font-size: 3rem;
-  line-height: 1;
-}
-
-.text-xl {
-  font-size: 1.25rem;
-  line-height: 1.75rem;
-}
-
-.text-sm {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-}
-
-.text-base {
-  font-size: 1rem;
-  line-height: 1.5rem;
-}
-
-.font-extrabold {
-  font-weight: 800;
-}
-
-.font-bold {
-  font-weight: 700;
-}
-
-.font-medium {
-  font-weight: 500;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.bg-gradient-to-br {
-  background-image: linear-gradient(to bottom right, var(--from), var(--to));
-}
-
-.relative {
-  position: relative;
-}
-
-.absolute {
-  position: absolute;
-}
-
-.inset-0 {
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-}
-
-.bg-primary {
-  background-color: var(--primary);
-}
-
-.bg-transparent {
-  background: transparent;
-}
-
-.transition-all {
-  transition-property: all;
-}
-
-.duration-300 {
-  transition-duration: 300ms;
-}
-
-.ease-out {
-  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
-}
-
-.transform {
-  transform: translateZ(0);
-}
-
-button {
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-}
-
-button:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-button:active {
-  transform: scale(0.98);
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-#goPrivateBtn {
-  background-color: var(--primary);
-  color: var(--secondary);
-}
-
-#goPrivateBtn:hover {
-  background-color: #dffb2f;
-  box-shadow: 0 0 20px rgba(235, 255, 61, 0.3);
-}
-
-#detailsBtn {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-
-#detailsBtn:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-}
-
-.card-container {
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  min-height: 500px;
-  width: 380px;
-}
-
-.card {
-  width: 100%;
-  padding: 1.5rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  color: white;
-  background: linear-gradient(to bottom right, #1E2366, #10133a);
-}
-
-.text-white-60 {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.text-white-10 {
-  color: rgba(255, 255, 255, 0.1);
-}
-
-.opacity-75 {
-  opacity: 0.75;
+  /* ============================================================
+   * Veil shared design tokens (Phase 8) — mirrored in dashboard.css
+   * ============================================================ */
+  --veil-accent:        #EBFF3D;
+  --veil-bg-primary:    #10133a;
+  --veil-bg-card:       #1E2366;
+  --veil-text-muted:    rgba(255, 255, 255, 0.5);
+  --veil-text-subtle:   rgba(255, 255, 255, 0.3);
+  --veil-border:        rgba(255, 255, 255, 0.08);
 }
 
 .progress-ring__circle {
   stroke-dasharray: var(--circumference);
   stroke-dashoffset: calc(var(--circumference) - (var(--circumference) * var(--score)) / 100);
-  transition: stroke-dashoffset 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
-              stroke 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+  transition: stroke-dashoffset 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              stroke 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
               opacity .25s ease;
-  transform: rotate(-90deg);
   transform-origin: 50% 50%;
   will-change: stroke-dashoffset, stroke;
   stroke: var(--ring-color);
+}
+
+/* Score ring: soft glow-pulse once data has loaded */
+@keyframes ring-glow-pulse {
+  0%   { filter: drop-shadow(0 0 2px var(--ring-color)); }
+  50%  { filter: drop-shadow(0 0 8px var(--ring-color)); }
+  100% { filter: drop-shadow(0 0 2px var(--ring-color)); }
+}
+
+.score-ring-loaded .progress-ring__circle {
+  animation: ring-glow-pulse 2s ease-in-out 2.5s 2; /* fires after stroke animation settles */
+}
+
+/* Score number: pop-in when value first appears */
+@keyframes score-number-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  70%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+
+.score-pop {
+  animation: score-number-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Loading skeleton shimmer for score number */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+.score-loading-skeleton {
+  color: transparent !important;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.06) 25%,
+    rgba(255,255,255,0.14) 50%,
+    rgba(255,255,255,0.06) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+  min-width: 2ch;
+  display: inline-block;
+}
+
+/* Score message fade helper — replaces raw style.opacity (Phase 8) */
+.msg-fading {
+  opacity: 0.7;
+  transform: scale(0.95);
 }
 
 #scoreValue {
@@ -287,6 +82,18 @@ button:disabled {
 }
 
 #scoreMessage {
-  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform;
+  transition: opacity 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform, opacity;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+body {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }

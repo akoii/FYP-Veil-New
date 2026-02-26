@@ -14,10 +14,13 @@ const CookieClassifier = {
   // Classification cache to avoid redundant API calls
   cache: new Map(),
   
+  // Persistent storage key
+  STORAGE_KEY: 'veil_cookie_classifications',
+  
   // Rate limiting configuration for optimized batch API
-  MAX_BATCH_SIZE: 50,        // Reduced batch size to avoid throttling
+  MAX_BATCH_SIZE: 100,        // Increased batch size for speed
   MAX_CONCURRENT: 5,         // Reduced concurrent requests to prevent throttling
-  DELAY_BETWEEN_BATCHES: 1000, // 1 second delay between batches to respect rate limits
+  DELAY_BETWEEN_BATCHES: 200, // Reduced delay for speed
   MAX_RETRIES: 3,            // Maximum retry attempts for failed requests
   RETRY_DELAY: 2000,         // 2 seconds delay before retry
   
@@ -31,35 +34,81 @@ const CookieClassifier = {
     0: { 
       name: 'Strictly Necessary', 
       color: 'green', 
-      bgColor: 'bg-green-500/20',
+      bgColor: 'bg-[#10133a] hover:bg-[#15194a]',
       textColor: 'text-green-400',
-      borderColor: 'border-green-500/30',
+      borderColor: 'border-green-500/30 hover:border-green-500/60 hover:shadow-[0_0_15px_rgba(34,197,94,0.2)]',
       icon: '🔒' 
     },
     1: { 
       name: 'Functionality', 
       color: 'blue', 
-      bgColor: 'bg-blue-500/20',
+      bgColor: 'bg-[#10133a] hover:bg-[#15194a]',
       textColor: 'text-blue-400',
-      borderColor: 'border-blue-500/30',
+      borderColor: 'border-blue-500/30 hover:border-blue-500/60 hover:shadow-[0_0_15px_rgba(59,130,246,0.2)]',
       icon: '⚙️' 
     },
     2: { 
       name: 'Analytics', 
       color: 'yellow', 
-      bgColor: 'bg-yellow-500/20',
+      bgColor: 'bg-[#10133a] hover:bg-[#15194a]',
       textColor: 'text-yellow-400',
-      borderColor: 'border-yellow-500/30',
+      borderColor: 'border-yellow-500/30 hover:border-yellow-500/60 hover:shadow-[0_0_15px_rgba(234,179,8,0.2)]',
       icon: '📊' 
     },
     3: { 
       name: 'Advertising/Tracking', 
       color: 'red', 
-      bgColor: 'bg-red-500/20',
+      bgColor: 'bg-[#10133a] hover:bg-[#15194a]',
       textColor: 'text-red-400',
-      borderColor: 'border-red-500/30',
+      borderColor: 'border-red-500/30 hover:border-red-500/60 hover:shadow-[0_0_15px_rgba(239,68,68,0.2)]',
       icon: '🎯' 
     }
+  },
+
+  /**
+   * Load cache from local storage
+   */
+  async loadCache() {
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+          console.warn('[CookieClassifier] Cache load timed out, proceeding with empty cache');
+          resolve();
+      }, 2000);
+
+      chrome.storage.local.get([this.STORAGE_KEY], (result) => {
+        clearTimeout(timeout);
+        if (chrome.runtime.lastError) {
+            console.warn('[CookieClassifier] Error loading cache:', chrome.runtime.lastError);
+            resolve();
+            return;
+        }
+        if (result[this.STORAGE_KEY]) {
+          try {
+            const storedCache = JSON.parse(result[this.STORAGE_KEY]);
+            Object.entries(storedCache).forEach(([key, value]) => {
+              this.cache.set(key, value);
+            });
+            console.log(`[CookieClassifier] Loaded ${this.cache.size} classifications from storage`);
+          } catch (e) {
+            console.error('[CookieClassifier] Error parsing cache:', e);
+          }
+        }
+        resolve();
+      });
+    });
+  },
+
+  /**
+   * Save cache to local storage
+   */
+  async saveCache() {
+    const cacheObj = Object.fromEntries(this.cache);
+    return new Promise((resolve) => {
+      chrome.storage.local.set({ [this.STORAGE_KEY]: JSON.stringify(cacheObj) }, () => {
+        // console.log('[CookieClassifier] Saved cache to storage');
+        resolve();
+      });
+    });
   },
   
   /**
@@ -275,11 +324,17 @@ const CookieClassifier = {
   /**
    * Classify multiple cookies with smart batching and rate limiting
    * @param {Array<string>} cookieNames - Array of cookie names to classify
+   * @param {Function} onProgress - Optional callback for progress updates (processed, total)
    * @returns {Promise<Array<Object>>} Array of classification results
    */
-  async classifyCookiesBatch(cookieNames) {
+  async classifyCookiesBatch(cookieNames, onProgress) {
     if (!cookieNames || cookieNames.length === 0) {
       return [];
+    }
+
+    // Ensure cache is loaded
+    if (this.cache.size === 0) {
+        await this.loadCache();
     }
     
     // Separate cached and uncached cookies
@@ -296,6 +351,11 @@ const CookieClassifier = {
     
     console.log(`[CookieClassifier] Batch: ${cookieNames.length} total, ${results.size} cached, ${uncached.length} need classification`);
     
+    // Report initial progress (cached items)
+    if (onProgress) {
+        onProgress(results.size, cookieNames.length);
+    }
+
     // If all cookies are cached, return immediately
     if (uncached.length === 0) {
       return cookieNames.map(name => ({
@@ -313,52 +373,72 @@ const CookieClassifier = {
       
       console.log(`[CookieClassifier] Processing ${uncached.length} cookies in ${batches.length} batch(es) with rate limiting...`);
       
-      // Process batches sequentially to avoid overwhelming the API
+      // Process batches with concurrency
       let processedCount = 0;
+      const CONCURRENCY = 3; // Process 3 batches in parallel
       
-      for (let i = 0; i < batches.length; i++) {
-        const batch = batches[i];
-        console.log(`[CookieClassifier] Processing batch ${i + 1}/${batches.length} (${batch.length} cookies)...`);
+      for (let i = 0; i < batches.length; i += CONCURRENCY) {
+        const chunk = batches.slice(i, i + CONCURRENCY);
+        console.log(`[CookieClassifier] Processing chunk ${Math.floor(i/CONCURRENCY) + 1}/${Math.ceil(batches.length/CONCURRENCY)} (${chunk.length} batches)...`);
         
-        // Add delay between batches (except for first batch)
+        // Add delay between chunks (except for first chunk)
         if (i > 0 && this.DELAY_BETWEEN_BATCHES > 0) {
           await this.sleep(this.DELAY_BETWEEN_BATCHES);
         }
         
-        const predictions = await this.processBatch(batch);
+        // Process chunk in parallel
+        const chunkResults = await Promise.all(chunk.map(batch => this.processBatch(batch)));
         
-        // Process results from this batch
-        predictions.forEach(pred => {
-          if (pred.class_id !== null && pred.class_id !== undefined) {
-            const categoryInfo = this.CATEGORIES[pred.class_id];
-            const result = {
-              category: pred.category,
-              class_id: pred.class_id,
-              confidence: pred.confidence || null,
-              ...categoryInfo,
-              error: pred.error || false
-            };
+        // Process results from this chunk
+        chunkResults.forEach((predictions, index) => {
+            const batch = chunk[index];
             
-            this.cache.set(pred.cookie_name, result);
-            results.set(pred.cookie_name, result);
-            processedCount++;
-          } else {
-            // Mark as failed
-            const failed = {
-              category: null,
-              class_id: null,
-              confidence: null,
-              error: true
-            };
-            this.cache.set(pred.cookie_name, failed);
-            results.set(pred.cookie_name, failed);
-          }
+            predictions.forEach(pred => {
+              if (pred.class_id !== null && pred.class_id !== undefined) {
+                const categoryInfo = this.CATEGORIES[pred.class_id];
+                const result = {
+                  category: pred.category,
+                  class_id: pred.class_id,
+                  confidence: pred.confidence || null,
+                  ...categoryInfo,
+                  error: pred.error || false
+                };
+                
+                this.cache.set(pred.cookie_name, result);
+                results.set(pred.cookie_name, result);
+                processedCount++;
+              } else {
+                // Mark as failed
+                const failed = {
+                  category: null,
+                  class_id: null,
+                  confidence: null,
+                  error: true
+                };
+                this.cache.set(pred.cookie_name, failed);
+                results.set(pred.cookie_name, failed);
+              }
+            });
         });
         
-        console.log(`[CookieClassifier] ✓ Batch ${i + 1}/${batches.length} complete: ${processedCount}/${uncached.length} total`);
+        // Update progress
+        if (onProgress) {
+            const currentTotal = results.size;
+            onProgress(currentTotal, cookieNames.length);
+        }
+        
+        // Save cache incrementally
+        if (processedCount > 0 && processedCount % 500 === 0) {
+            await this.saveCache();
+        }
       }
       
       console.log(`[CookieClassifier] ✅ All batches complete: ${processedCount}/${uncached.length} cookies classified successfully`);
+      
+      // Save updated cache
+      if (processedCount > 0) {
+          await this.saveCache();
+      }
       
     } catch (error) {
       console.error('[CookieClassifier] Batch classification error:', error);
@@ -410,9 +490,10 @@ const CookieClassifier = {
   /**
    * Clear the classification cache (useful for testing or updates)
    */
-  clearCache() {
+  async clearCache() {
     const size = this.cache.size;
     this.cache.clear();
+    await chrome.storage.local.remove(this.STORAGE_KEY);
     console.log(`[CookieClassifier] Cache cleared (${size} entries removed)`);
   },
   

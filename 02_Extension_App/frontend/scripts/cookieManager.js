@@ -123,6 +123,31 @@ const CookieManager = {
       acc[domain].push(cookie);
       return acc;
     }, {});
+  },
+
+  // 🆕 Block/Unblock Methods
+  async blockCookie(cookie) {
+    return new Promise(resolve => {
+      chrome.runtime.sendMessage({ action: 'blockCookie', cookie }, resolve);
+    });
+  },
+
+  async unblockCookie(cookie) {
+    return new Promise(resolve => {
+      chrome.runtime.sendMessage({ action: 'unblockCookie', cookie }, resolve);
+    });
+  },
+
+  async getBlockedCookies() {
+    return new Promise(resolve => {
+      chrome.runtime.sendMessage({ action: 'getBlockedCookies' }, resolve);
+    });
+  },
+
+  async deleteCookie(cookie) {
+    const protocol = cookie.secure ? 'https:' : 'http:';
+    const url = `${protocol}//${cookie.domain.startsWith('.') ? cookie.domain.substring(1) : cookie.domain}${cookie.path}`;
+    await chrome.cookies.remove({ url: url, name: cookie.name });
   }
 };
 

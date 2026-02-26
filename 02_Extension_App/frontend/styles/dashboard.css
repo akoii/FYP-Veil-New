@@ -3,6 +3,16 @@
 :root {
   --score: 75;
   --circumference: 251.2; /* 2π * 40 */
+
+  /* ============================================================
+   * Veil shared design tokens (Phase 8) — mirrored in popup.css
+   * ============================================================ */
+  --veil-accent:        #EBFF3D;
+  --veil-bg-primary:    #10133a;
+  --veil-bg-card:       #1E2366;
+  --veil-text-muted:    rgba(255, 255, 255, 0.5);
+  --veil-text-subtle:   rgba(255, 255, 255, 0.3);
+  --veil-border:        rgba(255, 255, 255, 0.08);
 }
 
 body {
@@ -14,9 +24,33 @@ body {
 .progress-ring__circle {
   stroke-dasharray: var(--circumference);
   stroke-dashoffset: calc(var(--circumference) - (var(--circumference) * var(--score)) / 100);
-  transition: stroke-dashoffset 2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: stroke-dashoffset 2s cubic-bezier(0.4, 0, 0.2, 1),
+              stroke 0.6s ease;
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
+  will-change: stroke-dashoffset, stroke;
+}
+
+/* Score ring: pop animation when JS updates the score */
+@keyframes ring-score-pop {
+  0%   { filter: drop-shadow(0 0 0px var(--veil-accent)); }
+  40%  { filter: drop-shadow(0 0 6px var(--veil-accent)); }
+  100% { filter: drop-shadow(0 0 2px var(--veil-accent)); }
+}
+
+.score-ring-updated {
+  animation: ring-score-pop 0.8s ease-out forwards;
+}
+
+/* Dashboard score value: slide-up reveal */
+@keyframes score-slide-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+#dashboardScoreValue {
+  transition: color 0.4s ease;
+  will-change: color;
 }
 
 .sidebar-item {
@@ -49,7 +83,7 @@ body {
 
 .chart-container {
   position: relative;
-  height: 300px;
+  height: 220px;
 }
 
 .fade-in {
@@ -72,6 +106,8 @@ body {
   gap: 2px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem;
 }
 
 /* Sliding background indicator */
